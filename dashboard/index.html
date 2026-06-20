@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Goat AI - Bot Dashboard</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+
+  <!-- Background Ambient Lights -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <!-- AUTHENTICATION CONTAINER -->
+  <div id="login-container" class="login-wrapper">
+    <div class="login-card">
+      <div class="login-header">
+        <i class="fa-solid fa-head-side-virus logo-icon"></i>
+        <h2>GOAT AI</h2>
+        <p>Enter your secret admin key to access the console.</p>
+      </div>
+      <div class="login-body">
+        <div class="input-group">
+          <i class="fa-solid fa-key input-icon"></i>
+          <input type="password" id="admin-key-input" placeholder="Enter Secret Key" required>
+        </div>
+        <button id="login-submit-btn" class="btn btn-primary btn-block">
+          <i class="fa-solid fa-unlock-keyhole"></i> Unlock Dashboard
+        </button>
+        <p class="error-msg" id="login-error-msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <div id="dashboard-container" class="dashboard-wrapper hidden">
+    <!-- Navigation Bar -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <i class="fa-solid fa-head-side-virus brand-logo"></i>
+        <span class="brand-name">GOAT AI</span>
+      </div>
+      <nav class="nav-links">
+        <button class="nav-tab active" data-tab="overview"><i class="fa-solid fa-chart-line"></i> Overview</button>
+        <button class="nav-tab" data-tab="threads"><i class="fa-solid fa-comments"></i> Threads</button>
+        <button class="nav-tab" data-tab="users"><i class="fa-solid fa-users"></i> Users</button>
+        <button class="nav-tab" data-tab="commands"><i class="fa-solid fa-terminal"></i> Commands</button>
+        <button class="nav-tab" data-tab="logs"><i class="fa-solid fa-file-invoice"></i> Logs</button>
+        <button class="nav-tab" data-tab="config"><i class="fa-solid fa-sliders"></i> Config</button>
+        <button class="nav-tab" data-tab="linker"><i class="fa-solid fa-link"></i> Link Device</button>
+      </nav>
+      <div class="nav-actions">
+        <button id="btn-session-modal" class="btn btn-secondary"><i class="fa-solid fa-key"></i> Bot
+          Session ID</button>
+        <button id="btn-restart-bot" class="btn btn-success"><i class="fa-solid fa-bolt"></i> Restart Bot</button>
+        <button id="btn-logout" class="btn-icon-logout" title="Lock Dashboard"><i class="fa-solid fa-lock"></i></button>
+      </div>
+    </header>
+
+    <!-- CONTENT SECTIONS -->
+    <main class="content-area">
+
+      <!-- 1. OVERVIEW TAB -->
+      <section id="tab-overview" class="tab-pane active">
+        <div class="metrics-panel">
+          <div class="panel-header">
+            <div>
+              <h3>System Metrics</h3>
+              <p>Real-time resource utilization and bot statistics.</p>
+            </div>
+            <div id="bot-status-badge" class="status-badge live">
+              <span class="pulse-dot"></span> LIVE
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <!-- Card 1: Uptime -->
+            <div class="metric-card card-purple">
+              <div class="card-header">
+                <span class="card-title">UPTIME</span>
+                <i class="fa-solid fa-clock card-icon"></i>
+              </div>
+              <div class="card-value" id="val-uptime">0s</div>
+            </div>
+            <!-- Card 2: Ram Usage -->
+            <div class="metric-card card-cyan">
+              <div class="card-header">
+                <span class="card-title">RAM USAGE</span>
+                <i class="fa-solid fa-microchip card-icon"></i>
+              </div>
+              <div class="card-value" id="val-ram">0 MB / 0 MB</div>
+            </div>
+            <!-- Card 3: CPU Usage -->
+            <div class="metric-card card-green">
+              <div class="card-header">
+                <span class="card-title">CPU USAGE</span>
+                <i class="fa-solid fa-gauge-high card-icon"></i>
+              </div>
+              <div class="card-value" id="val-cpu">0%</div>
+            </div>
+            <!-- Card 4: Version -->
+            <div class="metric-card card-pink">
+              <div class="card-header">
+                <span class="card-title">VERSION</span>
+                <i class="fa-solid fa-code-branch card-icon"></i>
+              </div>
+              <div class="card-value" id="val-version">1.0.0</div>
+            </div>
+            <!-- Card 5: Node.js -->
+            <div class="metric-card card-yellow">
+              <div class="card-header">
+                <span class="card-title">NODE.JS</span>
+                <i class="fa-brands fa-node-js card-icon"></i>
+              </div>
+              <div class="card-value" id="val-node">v18.0.0</div>
+            </div>
+            <!-- Card 6: Storage -->
+            <div class="metric-card card-cyan">
+              <div class="card-header">
+                <span class="card-title">STORAGE</span>
+                <i class="fa-solid fa-database card-icon"></i>
+              </div>
+              <div class="card-value" id="val-storage">0GB / 0GB</div>
+            </div>
+            <!-- Card 7: OS System -->
+            <div class="metric-card card-purple">
+              <div class="card-header">
+                <span class="card-title">OS SYSTEM</span>
+                <i class="fa-solid fa-window-restore card-icon"></i>
+              </div>
+              <div class="card-value" id="val-os">Loading...</div>
+            </div>
+            <!-- Card 8: Dependencies -->
+            <div class="metric-card card-pink">
+              <div class="card-header">
+                <span class="card-title">DEPENDENCIES</span>
+                <i class="fa-solid fa-cubes card-icon"></i>
+              </div>
+              <div class="card-value" id="val-dependencies">0</div>
+            </div>
+            <!-- Card 9: Active Threads -->
+            <div class="metric-card card-purple">
+              <div class="card-header">
+                <span class="card-title">ACTIVE THREADS</span>
+                <i class="fa-solid fa-comments card-icon"></i>
+              </div>
+              <div class="card-value" id="val-active-threads">0</div>
+            </div>
+            <!-- Card 10: Total Users -->
+            <div class="metric-card card-cyan">
+              <div class="card-header">
+                <span class="card-title">TOTAL USERS</span>
+                <i class="fa-solid fa-user-group card-icon"></i>
+              </div>
+              <div class="card-value" id="val-total-users">0</div>
+            </div>
+            <!-- Card 11: Members -->
+            <div class="metric-card card-green">
+              <div class="card-header">
+                <span class="card-title">MEMBERS</span>
+                <i class="fa-solid fa-users-gear card-icon"></i>
+              </div>
+              <div class="card-value" id="val-members">0</div>
+            </div>
+            <!-- Card 12: Commands -->
+            <div class="metric-card card-pink">
+              <div class="card-header">
+                <span class="card-title">COMMANDS</span>
+                <i class="fa-solid fa-terminal card-icon"></i>
+              </div>
+              <div class="card-value" id="val-commands">0</div>
+            </div>
+          </div>
+
+          <div class="panel-footer">
+            <div class="footer-actions">
+              <button id="btn-terminate" class="btn btn-outline-danger"><i class="fa-solid fa-power-off"></i> Terminate
+                Process</button>
+              <button id="btn-flush" class="btn btn-outline-warning"><i class="fa-solid fa-broom"></i> Flush
+                Cache</button>
+            </div>
+            <div class="footer-info">
+              Made by <strong class="glow-text">Romeo Calyx</strong>
+              <div class="social-icons">
+                <a href="https://facebook.com" target="_blank"><i class="fa-brands fa-facebook"></i></a>
+                <a href="https://github.com" target="_blank"><i class="fa-brands fa-github"></i></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. THREADS TAB -->
+      <section id="tab-threads" class="tab-pane">
+        <div class="pane-card">
+          <div class="pane-header">
+            <h3>Active Group Chats</h3>
+            <div class="search-bar-wrapper">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="threads-search" placeholder="Search threads by ID or name...">
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="data-table" id="threads-table">
+              <thead>
+                <tr>
+                  <th>Thread ID</th>
+                  <th>Group Name</th>
+                  <th>Total Members</th>
+                  <th>Approval Mode</th>
+                  <th>Created Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="5" class="text-center">Loading threads...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. USERS TAB -->
+      <section id="tab-users" class="tab-pane">
+        <div class="pane-card">
+          <div class="pane-header">
+            <h3>Registered Users</h3>
+            <div class="search-bar-wrapper">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="users-search" placeholder="Search users by name or ID...">
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="data-table" id="users-table">
+              <thead>
+                <tr>
+                  <th>User ID</th>
+                  <th>Name</th>
+                  <th>Coins</th>
+                  <th>Exp</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="6" class="text-center">Loading users...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. COMMANDS TAB -->
+      <section id="tab-commands" class="tab-pane">
+        <div class="pane-card">
+          <div class="pane-header">
+            <h3>Bot Command Palette</h3>
+            <div class="search-bar-wrapper">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="commands-search" placeholder="Search commands by name, category or description...">
+            </div>
+          </div>
+          <div class="commands-grid" id="commands-grid-container">
+            <!-- Command Cards will be rendered here -->
+            <div class="text-center w-100 py-5">Loading commands...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. LOGS TAB -->
+      <section id="tab-logs" class="tab-pane">
+        <div class="terminal-card">
+          <div class="terminal-header">
+            <div class="terminal-buttons">
+              <span class="btn-dot dot-red"></span>
+              <span class="btn-dot dot-yellow"></span>
+              <span class="btn-dot dot-green"></span>
+              <span class="terminal-title"><i class="fa-solid fa-terminal"></i> system-console.log</span>
+            </div>
+            <div class="terminal-actions">
+              <div class="search-bar-wrapper terminal-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="logs-search" placeholder="Filter console logs...">
+              </div>
+              <label class="checkbox-wrapper">
+                <input type="checkbox" id="logs-autoscroll" checked>
+                <span>Auto Scroll</span>
+              </label>
+              <button id="btn-clear-logs" class="btn btn-sm btn-secondary"><i class="fa-solid fa-ban"></i>
+                Clear</button>
+            </div>
+          </div>
+          <div class="terminal-body" id="log-terminal">
+            <div class="log-line log-info">Goat AI Terminal session started. Listening for logs...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. CONFIG TAB -->
+      <section id="tab-config" class="tab-pane">
+        <div class="pane-card">
+          <div class="pane-header">
+            <h3>Edit Configuration</h3>
+            <p>Modify fields below and hit save. Changes will be saved to config.json instantly.</p>
+          </div>
+          <form id="config-form" class="config-form">
+            <!-- Dynamically populated config fields -->
+            <div class="text-center py-5">Loading configuration file...</div>
+          </form>
+        </div>
+      </section>
+      <!-- 7. LINKER TAB -->
+      <section id="tab-linker" class="tab-pane">
+        <div class="pane-card linker-card" style="max-width: 500px; margin: 0 auto;">
+          <div class="pane-header text-center" style="display: block; margin-bottom: 25px;">
+            <i class="fa-solid fa-link" style="font-size: 2.5rem; color: var(--color-primary); margin-bottom: 10px; display: inline-block;"></i>
+            <h3>Link WhatsApp Device</h3>
+            <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-top: 5px;">Connect your WhatsApp account using either a pairing code or QR code.</p>
+          </div>
+
+          <!-- Toggle Switch -->
+          <div class="linker-toggle-container">
+            <button class="linker-toggle-btn active" id="btn-toggle-pair" data-mode="pair">
+              <i class="fas fa-key"></i> Pair Code
+            </button>
+            <button class="linker-toggle-btn" id="btn-toggle-qr" data-mode="qr">
+              <i class="fas fa-qrcode"></i> QR Code
+            </button>
+          </div>
+
+          <!-- Pair Code Content -->
+          <div id="linker-pair-content" class="linker-section-content">
+            <div class="form-group" style="margin-bottom: 20px;">
+              <label for="linker-mobile-number">WhatsApp Number</label>
+              <input type="text" id="linker-mobile-number" placeholder="e.g., +15550192834" style="background: rgba(30, 32, 45, 0.4); color: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='var(--color-primary)'" onblur="this.style.borderColor='var(--border-color)'">
+              <span class="field-help" style="font-size: 0.8rem; color: var(--color-text-dim); line-height: 1.3; margin-top: 5px; display: block;">Enter your full international number with country code (without spaces or dashes).</span>
+            </div>
+            <button id="btn-generate-pair" class="btn btn-primary btn-block">
+              <i class="fas fa-key"></i> Generate Pair Code
+            </button>
+          </div>
+
+          <!-- QR Code Content -->
+          <div id="linker-qr-content" class="linker-section-content hidden">
+            <div class="qr-display-box" style="background: rgba(30, 32, 45, 0.4); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; text-align: center; margin-bottom: 20px; min-height: 280px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px;">
+              <div id="linker-qr-spinner" class="loading-spinner hidden" style="font-size: 2rem; color: var(--color-primary);"><i class="fas fa-spinner fa-spin"></i></div>
+              <img id="linker-qr-image" class="hidden" src="" alt="QR Code" style="max-width: 240px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 4px solid white;">
+              <div id="linker-qr-instructions" style="font-size: 0.85rem; color: var(--color-text-muted); line-height: 1.5; text-align: left; width: 100%;">
+                Scan this QR code with your WhatsApp app
+              </div>
+            </div>
+          </div>
+
+          <!-- Result Display -->
+          <div id="linker-result-box" class="linker-result-box hidden" style="margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: 600; text-align: center; font-family: var(--font-mono); border: 1px solid var(--border-color);">
+            CODE: <span id="linker-result-code" style="color: var(--color-success);"></span>
+          </div>
+
+          <!-- Copy Button -->
+          <button id="btn-copy-pair-code" class="btn btn-secondary btn-block hidden" style="margin-top: 15px;">
+            <i class="fas fa-copy"></i> Copy Code
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- SESSION ID INJECTION MODAL -->
+  <div id="session-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-key"></i> Inject Bot Session ID</h3>
+        <button class="btn-close-modal" id="btn-close-session-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Paste your session ID below. We support the compressed format (e.g. starting with <code>RomeoBot!</code>),
+          plain base64 encoded credentials, or direct server download URLs.
+        </p>
+        <div class="warning-alert">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span><strong>WARNING:</strong> Injecting a new session ID will overwrite existing WhatsApp credentials and
+            restart the bot process.</span>
+        </div>
+        <div class="textarea-group">
+          <textarea id="session-id-textarea" rows="6" placeholder="Paste your Session ID / Token here..."
+            required></textarea>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-cancel-session" class="btn btn-secondary">Cancel</button>
+          <button id="btn-submit-session" class="btn btn-success"><i class="fa-solid fa-upload"></i> Inject &
+            Restart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMAND SCRIPT EDITOR MODAL -->
+  <div id="editor-modal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 1400px; width: 96%;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-code"></i> Edit Command: <span id="editor-cmd-name" style="color: var(--color-success);"></span></h3>
+        <button class="btn-close-modal" id="btn-close-editor-modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px;">
+        <div style="margin-bottom: 12px;">
+          <div id="editor-code-container" style="height: 650px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.95rem;"></div>
+        </div>
+        <div class="modal-actions" style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div id="editor-file-info" style="font-size: 0.85rem; color: var(--color-text-muted); font-family: var(--font-mono);">File: -</div>
+          <div style="display: flex; gap: 12px;">
+            <button id="btn-cancel-editor" class="btn btn-secondary">Cancel</button>
+            <button id="btn-save-editor" class="btn btn-success"><i class="fa-solid fa-floppy-disk"></i> Save & Hot-Reload</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION SYSTEM -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Socket.io client -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Ace Editor library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
+  <script src="index.js"></script>
+</body>
+
+</html>
