@@ -552,6 +552,4 @@ The bot uses a **process manager** (`index.js`) that automatically restarts the 
 ## 📜 License
 
 Use and modify freely with credit to the original authors.
-#   W h a t s a p p - G o a t b o t  
- #   W h a t s a p p - G o a t b o t  
- # Whatsapp-Goatbot
+#
