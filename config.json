@@ -7,8 +7,8 @@
     "145917739024404"
   ],
   "phoneNumber": "881886778380",
-  "loginMode": "qr",
-  "sessionID": "",
+  "loginMode": "pair",
+  "sessionID": "RomeoBot~aHR0cHM6Ly9kLnVndXUuc2UvbndPVHhLeEwuanNvbg==",
   "authFolder": "./auth",
   "database": {
     "type": "json",
