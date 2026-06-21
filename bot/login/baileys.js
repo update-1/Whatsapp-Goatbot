@@ -284,6 +284,8 @@ function baileysConnect(options, callback) {
             if (connection === "close") {
                 const statusCode = lastDisconnect?.error?.output?.statusCode;
                 const loggedOut = statusCode === DisconnectReason.loggedOut;
+                const reason = (lastDisconnect?.error?.message || lastDisconnect?.error || "Unknown");
+                const isConflict = reason.toLowerCase().includes("conflict");
 
                 if (loggedOut) {
                     try { fs.rmSync(authFolder, { recursive: true, force: true }); } catch (_) {}
@@ -291,7 +293,17 @@ function baileysConnect(options, callback) {
                     return;
                 }
 
-                console.log(C.yellow + "Connection closed. Reason: " + (lastDisconnect?.error?.message || lastDisconnect?.error || "Unknown") + C.reset);
+                console.log(C.yellow + "Connection closed. Reason: " + reason + C.reset);
+
+                if (isConflict) {
+                    console.log(C.yellow + "Conflict detected — waiting 10s before reconnect..." + C.reset);
+                    setTimeout(() => {
+                        console.log(C.cyan + "Restarting process..." + C.reset);
+                        process.exit(2);
+                    }, 10000);
+                    return;
+                }
+
                 console.log(C.cyan + "Restarting process for a clean reconnection..." + C.reset);
                 process.exit(2);
             }
