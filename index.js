@@ -11,8 +11,8 @@ function startProject() {
 
   child.on("close", (code) => {
     if (code === 2) {
-      log.info("SYSTEM", "Restarting project (code 2)…");
-      return startProject();
+      log.info("SYSTEM", "Restarting project (code 2) in 3s…");
+      return setTimeout(() => startProject(), 3000);
     }
     if (code === null || code === 0) {
       log.warn("SYSTEM", "Child exited cleanly — restarting in 3s…");
