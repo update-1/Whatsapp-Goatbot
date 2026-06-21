@@ -3,6 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
+const { normUID } = require("../../bot/login/baileys.js");
 
 const {
   loadCmd,
@@ -276,7 +277,7 @@ module.exports = {
 
   // ── Reaction handler — confirm overwrite ──────────────────────────────────
   onReaction: async ({ api, event, Reaction, message }) => {
-    if (event.senderID !== Reaction.author) return;
+    if (normUID(event.senderID) !== normUID(Reaction.author)) return;
     if (Reaction.type !== "install_overwrite") return;
 
     const { filePath, fileName, code } = Reaction;

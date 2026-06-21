@@ -3,7 +3,7 @@
 module.exports = {
   config: {
     name: "refresh",
-    aliases: ["update", "sync"],
+    aliases: [],
     version: "1.0.0",
     author: "Rômeo",
     role: 1, // Requires Group Admin

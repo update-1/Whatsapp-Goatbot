@@ -38,6 +38,13 @@ function defaultUser(uid) {
   };
 }
 
+function normalize(uid) {
+  if (!uid) return "";
+  if (Array.isArray(uid)) uid = uid[0];
+  if (typeof uid !== "string") return "";
+  return uid.split(":")[0].split("@")[0];
+}
+
 // ── JSON controller ──────────────────────────────────────────────────────────
 const jsonController = {
   async getAll() {
@@ -46,6 +53,7 @@ const jsonController = {
   },
 
   async get(uid) {
+    uid = normalize(uid);
     const all = readJson();
     if (!all[uid]) {
       all[uid] = defaultUser(uid);
@@ -55,6 +63,7 @@ const jsonController = {
   },
 
   async set(uid, value, field) {
+    uid = normalize(uid);
     const all = readJson();
     if (!all[uid]) all[uid] = defaultUser(uid);
     if (field) {
@@ -68,6 +77,7 @@ const jsonController = {
   },
 
   async delete(uid) {
+    uid = normalize(uid);
     const all = readJson();
     delete all[uid];
     writeJson(all);
@@ -95,6 +105,7 @@ const mongoController = {
   },
 
   async get(uid) {
+    uid = normalize(uid);
     let doc = await this._get().findOne({ uid }).lean();
     if (!doc) {
       doc = await this._get().create(defaultUser(uid));
@@ -104,6 +115,7 @@ const mongoController = {
   },
 
   async set(uid, value, field) {
+    uid = normalize(uid);
     const update = field ? { [field]: value, updatedAt: new Date() } : { ...value, updatedAt: new Date() };
     const doc = await this._get().findOneAndUpdate(
       { uid },
@@ -114,6 +126,7 @@ const mongoController = {
   },
 
   async delete(uid) {
+    uid = normalize(uid);
     await this._get().deleteOne({ uid });
   },
 

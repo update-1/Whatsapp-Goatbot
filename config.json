@@ -1,14 +1,16 @@
 {
-  "prefix": "!",
+  "prefix": ".",
   "botName": "Romeo Bot",
   "language": "en",
   "adminBot": [
+    "8801703956986",
     "246870660145375",
+    "239097289437432",
     "145917739024404"
   ],
-  "phoneNumber": "881886778380",
-  "loginMode": "pair",
-  "sessionID": "RomeoBot~aHR0cHM6Ly9kLnVndXUuc2UvbndPVHhLeEwuanNvbg==",
+  "phoneNumber": "8801703956986",
+  "loginMode": "qr",
+  "sessionID": "",
   "authFolder": "./auth",
   "database": {
     "type": "json",
@@ -18,7 +20,7 @@
     "notes": "(1) type: 'json' or 'mongodb' | (2) if mongodb, fill uriMongodb with your MongoDB URI | (3) autoSyncWhenStart: reload all data from DB on every restart | (4) autoRefreshThreadInfoFirstTime: pull fresh group info from WA on first boot"
   },
   "listen": {
-    "selfListen": false,
+    "selfListen": true,
     "listenEvents": true,
     "autoMarkDelivery": false,
     "autoReconnect": true,
@@ -29,7 +31,7 @@
     "whitelistUIDs": [],
     "whitelistThreadMode": false,
     "whitelistThreadIDs": [],
-    "adminOnly": false,
+    "adminOnly": true,
     "antiInbox": false,
     "unsendBotReact": true,
     "unsendBotReactEmoji": "👍"
