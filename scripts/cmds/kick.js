@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 module.exports = {
   config: {
@@ -21,12 +21,15 @@ module.exports = {
 
     if (targetUID === event.senderID) return message.reply("❌ You cannot kick yourself.");
 
-    const adminList = global.ST.config.adminBot || [];
+    const adminList = global.GoatBot.config.adminBot || [];
     if (adminList.includes(targetUID)) return message.reply("❌ You cannot kick a bot admin.");
 
     try {
       await api.removeUserFromGroup(event.threadID, [targetUID]);
-      return message.reply(`✅ *${phone}* has been kicked from the group.`);
+      return message.reply({
+        body: `✅ @${phone} has been kicked from the group.`,
+        mentions: [targetUID]
+      });
     } catch (e) {
       return message.reply("❌ Failed to kick: " + e.message + "\n(Make sure the bot is an admin.)");
     }

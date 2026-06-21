@@ -13,7 +13,7 @@
   },
 
   onStart: async ({ api, event, args, message, prefix }) => {
-    const cmds = global.ST.cmds;
+    const cmds = global.GoatBot.cmds;
 
     // Show specific command info
     if (args[0]) {
@@ -46,7 +46,7 @@
       grouped[cat].push(prefix + cmd.config.name);
     }
 
-    let text = `🤖 *${global.ST.config.botName || "WCA Bot"}*\n`;
+    let text = `🤖 *${global.GoatBot.config.botName || "WCA Bot"}*\n`;
     text += `Prefix: ${prefix} | Commands: ${cmds.size}\n\n`;
 
     for (const [cat, list] of Object.entries(grouped)) {

@@ -15,10 +15,10 @@ module.exports = {
   },
 
   onStart: async ({ api, event, message }) => {
-    if (!global.ST.DB) return message.reply("❌ Database not initialized.");
+    if (!global.GoatBot.DB) return message.reply("❌ Database not initialized.");
 
     try {
-      const allUsersObj = await global.ST.DB.users.getAll();
+      const allUsersObj = await global.GoatBot.DB.users.getAll();
       const allUsers = Object.values(allUsersObj);
 
       const validUsers = allUsers.filter(u => u.money && u.money > 0);

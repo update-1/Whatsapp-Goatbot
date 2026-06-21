@@ -57,9 +57,7 @@
         <button class="nav-tab" data-tab="threads"><i class="fa-solid fa-comments"></i> Threads</button>
         <button class="nav-tab" data-tab="users"><i class="fa-solid fa-users"></i> Users</button>
         <button class="nav-tab" data-tab="commands"><i class="fa-solid fa-terminal"></i> Commands</button>
-        <button class="nav-tab" data-tab="logs"><i class="fa-solid fa-file-invoice"></i> Logs</button>
         <button class="nav-tab" data-tab="config"><i class="fa-solid fa-sliders"></i> Config</button>
-        <button class="nav-tab" data-tab="linker"><i class="fa-solid fa-link"></i> Link Device</button>
       </nav>
       <div class="nav-actions">
         <button id="btn-session-modal" class="btn btn-secondary"><i class="fa-solid fa-key"></i> Bot
@@ -282,34 +280,7 @@
         </div>
       </section>
 
-      <!-- 5. LOGS TAB -->
-      <section id="tab-logs" class="tab-pane">
-        <div class="terminal-card">
-          <div class="terminal-header">
-            <div class="terminal-buttons">
-              <span class="btn-dot dot-red"></span>
-              <span class="btn-dot dot-yellow"></span>
-              <span class="btn-dot dot-green"></span>
-              <span class="terminal-title"><i class="fa-solid fa-terminal"></i> system-console.log</span>
-            </div>
-            <div class="terminal-actions">
-              <div class="search-bar-wrapper terminal-search">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="logs-search" placeholder="Filter console logs...">
-              </div>
-              <label class="checkbox-wrapper">
-                <input type="checkbox" id="logs-autoscroll" checked>
-                <span>Auto Scroll</span>
-              </label>
-              <button id="btn-clear-logs" class="btn btn-sm btn-secondary"><i class="fa-solid fa-ban"></i>
-                Clear</button>
-            </div>
-          </div>
-          <div class="terminal-body" id="log-terminal">
-            <div class="log-line log-info">Goat AI Terminal session started. Listening for logs...</div>
-          </div>
-        </div>
-      </section>
+
 
       <!-- 6. CONFIG TAB -->
       <section id="tab-config" class="tab-pane">
@@ -324,59 +295,7 @@
           </form>
         </div>
       </section>
-      <!-- 7. LINKER TAB -->
-      <section id="tab-linker" class="tab-pane">
-        <div class="pane-card linker-card" style="max-width: 500px; margin: 0 auto;">
-          <div class="pane-header text-center" style="display: block; margin-bottom: 25px;">
-            <i class="fa-solid fa-link" style="font-size: 2.5rem; color: var(--color-primary); margin-bottom: 10px; display: inline-block;"></i>
-            <h3>Link WhatsApp Device</h3>
-            <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-top: 5px;">Connect your WhatsApp account using either a pairing code or QR code.</p>
-          </div>
 
-          <!-- Toggle Switch -->
-          <div class="linker-toggle-container">
-            <button class="linker-toggle-btn active" id="btn-toggle-pair" data-mode="pair">
-              <i class="fas fa-key"></i> Pair Code
-            </button>
-            <button class="linker-toggle-btn" id="btn-toggle-qr" data-mode="qr">
-              <i class="fas fa-qrcode"></i> QR Code
-            </button>
-          </div>
-
-          <!-- Pair Code Content -->
-          <div id="linker-pair-content" class="linker-section-content">
-            <div class="form-group" style="margin-bottom: 20px;">
-              <label for="linker-mobile-number">WhatsApp Number</label>
-              <input type="text" id="linker-mobile-number" placeholder="e.g., +15550192834" style="background: rgba(30, 32, 45, 0.4); color: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='var(--color-primary)'" onblur="this.style.borderColor='var(--border-color)'">
-              <span class="field-help" style="font-size: 0.8rem; color: var(--color-text-dim); line-height: 1.3; margin-top: 5px; display: block;">Enter your full international number with country code (without spaces or dashes).</span>
-            </div>
-            <button id="btn-generate-pair" class="btn btn-primary btn-block">
-              <i class="fas fa-key"></i> Generate Pair Code
-            </button>
-          </div>
-
-          <!-- QR Code Content -->
-          <div id="linker-qr-content" class="linker-section-content hidden">
-            <div class="qr-display-box" style="background: rgba(30, 32, 45, 0.4); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; text-align: center; margin-bottom: 20px; min-height: 280px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px;">
-              <div id="linker-qr-spinner" class="loading-spinner hidden" style="font-size: 2rem; color: var(--color-primary);"><i class="fas fa-spinner fa-spin"></i></div>
-              <img id="linker-qr-image" class="hidden" src="" alt="QR Code" style="max-width: 240px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 4px solid white;">
-              <div id="linker-qr-instructions" style="font-size: 0.85rem; color: var(--color-text-muted); line-height: 1.5; text-align: left; width: 100%;">
-                Scan this QR code with your WhatsApp app
-              </div>
-            </div>
-          </div>
-
-          <!-- Result Display -->
-          <div id="linker-result-box" class="linker-result-box hidden" style="margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: 600; text-align: center; font-family: var(--font-mono); border: 1px solid var(--border-color);">
-            CODE: <span id="linker-result-code" style="color: var(--color-success);"></span>
-          </div>
-
-          <!-- Copy Button -->
-          <button id="btn-copy-pair-code" class="btn btn-secondary btn-block hidden" style="margin-top: 15px;">
-            <i class="fas fa-copy"></i> Copy Code
-          </button>
-        </div>
-      </section>
 
     </main>
   </div>
@@ -415,18 +334,23 @@
   <div id="editor-modal" class="modal-overlay hidden">
     <div class="modal-card" style="max-width: 1400px; width: 96%;">
       <div class="modal-header">
-        <h3><i class="fa-solid fa-code"></i> Edit Command: <span id="editor-cmd-name" style="color: var(--color-success);"></span></h3>
+        <h3><i class="fa-solid fa-code"></i> Edit Command: <span id="editor-cmd-name"
+            style="color: var(--color-success);"></span></h3>
         <button class="btn-close-modal" id="btn-close-editor-modal">&times;</button>
       </div>
       <div class="modal-body" style="padding: 16px;">
         <div style="margin-bottom: 12px;">
-          <div id="editor-code-container" style="height: 650px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.95rem;"></div>
+          <div id="editor-code-container"
+            style="height: 650px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.95rem;"></div>
         </div>
-        <div class="modal-actions" style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-          <div id="editor-file-info" style="font-size: 0.85rem; color: var(--color-text-muted); font-family: var(--font-mono);">File: -</div>
+        <div class="modal-actions"
+          style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div id="editor-file-info"
+            style="font-size: 0.85rem; color: var(--color-text-muted); font-family: var(--font-mono);">File: -</div>
           <div style="display: flex; gap: 12px;">
             <button id="btn-cancel-editor" class="btn btn-secondary">Cancel</button>
-            <button id="btn-save-editor" class="btn btn-success"><i class="fa-solid fa-floppy-disk"></i> Save & Hot-Reload</button>
+            <button id="btn-save-editor" class="btn btn-success"><i class="fa-solid fa-floppy-disk"></i> Save &
+              Hot-Reload</button>
           </div>
         </div>
       </div>
@@ -436,11 +360,11 @@
   <!-- TOAST NOTIFICATION SYSTEM -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Socket.io client -->
-  <script src="/socket.io/socket.io.js"></script>
+  <!-- Socket.io library -->
+  <script src="/socket.io/socket.io.js" defer></script>
   <!-- Ace Editor library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
-  <script src="index.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js" defer></script>
+  <script src="script.js" defer></script>
 </body>
 
 </html>

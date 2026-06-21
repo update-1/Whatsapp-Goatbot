@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 const os = require("os");
 const path = require("path");
@@ -77,18 +77,17 @@ module.exports = {
     const loading = await animateStatus(message);
 
     const pkg = readPackageJson(path.resolve(process.cwd(), "package.json"));
-    const wcaPkg = readPackageJson(path.resolve(process.cwd(), "wca", "package.json"));
     const mem = process.memoryUsage();
     const uptime = global.humanDuration
-      ? global.humanDuration(Date.now() - (global.ST.startTime || Date.now()))
+      ? global.humanDuration(Date.now() - (global.GoatBot.startTime || Date.now()))
       : `${Math.floor(process.uptime())}s`;
 
     let users = 0;
     let threads = 0;
     try {
-      if (global.ST.DB) {
-        users = await global.ST.DB.users.count();
-        threads = await global.ST.DB.threads.count();
+      if (global.GoatBot.DB) {
+        users = await global.GoatBot.DB.users.count();
+        threads = await global.GoatBot.DB.threads.count();
       }
     } catch (_) { }
 
@@ -97,14 +96,14 @@ module.exports = {
     const deps = Object.keys(pkg.dependencies || {}).length;
     const optionalDeps = Object.keys(pkg.optionalDependencies || {}).length;
     const cpu = os.cpus()[0]?.model || "unknown";
-    const express = global.ST.config.express || {};
-    const listen = global.ST.config.listen || {};
+    const express = global.GoatBot.config.express || {};
+    const listen = global.GoatBot.config.listen || {};
 
     const text =
-      `*${global.ST.config.botName || "WCA Bot"} Status*\n\n` +
+      `*${global.GoatBot.config.botName || "Baileys Bot"} Status*\n\n` +
       `Project: ${pkg.name || "unknown"} v${pkg.version || "0.0.0"}\n` +
       `Account: ${phone}\n` +
-      `Prefix: ${global.ST.config.prefix || "!"}\n` +
+      `Prefix: ${global.GoatBot.config.prefix || "!"}\n` +
       `Uptime: ${uptime}\n\n` +
       `Runtime\n` +
       `Node: ${process.version}\n` +
@@ -116,7 +115,7 @@ module.exports = {
       `Heap: ${formatBytes(mem.heapUsed)} / ${formatBytes(mem.heapTotal)}\n` +
       `System: ${formatBytes(os.freemem())} free / ${formatBytes(os.totalmem())}\n\n` +
       `Database\n` +
-      `Type: ${(global.ST.config.database && global.ST.config.database.type) || "json"}\n` +
+      `Type: ${(global.GoatBot.config.database && global.GoatBot.config.database.type) || "json"}\n` +
       `Users: ${users}\n` +
       `Threads: ${threads}\n\n` +
       `Network\n` +
@@ -124,7 +123,7 @@ module.exports = {
       `Listen events: ${listen.listenEvents !== false ? "on" : "off"}\n` +
       `Self listen: ${listen.selfListen ? "on" : "off"}\n\n` +
       `Packages\n` +
-      `WCA: ${wcaPkg.version || pkg.dependencies?.["@sheikhtamim/wca"] || "local"}\n` +
+      `Baileys: ${pkg.dependencies?.["@whiskeysockets/baileys"] || "local"}\n` +
       `Dependencies: ${deps} + ${optionalDeps} optional`;
 
     return editOrReply(message, loading, text);

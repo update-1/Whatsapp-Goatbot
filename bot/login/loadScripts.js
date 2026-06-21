@@ -67,7 +67,7 @@ function safeRequire(filePath) {
  * @param {object} api
  */
 async function loadCommands(api) {
-  const unload = (global.ST.configCommands.commandUnload || []).map(n => n.toLowerCase());
+  const unload = (global.GoatBot.configCommands.commandUnload || []).map(n => n.toLowerCase());
   const files = fs.readdirSync(CMDS_DIR).filter(f => f.endsWith(".js"));
 
   let loaded = 0;
@@ -109,13 +109,13 @@ async function loadCommands(api) {
     // Run onLoad if defined
     if (typeof mod.onLoad === "function") {
       try {
-        await mod.onLoad({ api, threadsData: global.ST.DB.threads, userData: global.ST.DB.users });
+        await mod.onLoad({ api, threadsData: global.GoatBot.DB.threads, userData: global.GoatBot.DB.users });
       } catch (e) {
         log.warn("CMD LOAD", `${file} onLoad error: ${e.message}`);
       }
     }
 
-    global.ST.cmds.set(mod.config.name.toLowerCase(), mod);
+    global.GoatBot.cmds.set(mod.config.name.toLowerCase(), mod);
     loaded++;
     spinner.update(`Loading commands (${loaded}/${files.length}) — ${mod.config.name}`);
   }
@@ -133,7 +133,7 @@ async function loadCommands(api) {
  * @param {object} api
  */
 async function loadEvents(api) {
-  const unload = (global.ST.configCommands.commandEventUnload || []).map(n => n.toLowerCase());
+  const unload = (global.GoatBot.configCommands.commandEventUnload || []).map(n => n.toLowerCase());
   const files = fs.readdirSync(EVENTS_DIR).filter(f => f.endsWith(".js"));
 
   let loaded = 0;
@@ -169,13 +169,13 @@ async function loadEvents(api) {
 
     if (typeof mod.onLoad === "function") {
       try {
-        await mod.onLoad({ api, threadsData: global.ST.DB.threads, userData: global.ST.DB.users });
+        await mod.onLoad({ api, threadsData: global.GoatBot.DB.threads, userData: global.GoatBot.DB.users });
       } catch (e) {
         log.warn("EVT LOAD", `${file} onLoad error: ${e.message}`);
       }
     }
 
-    global.ST.events.set(mod.config.name.toLowerCase(), mod);
+    global.GoatBot.events.set(mod.config.name.toLowerCase(), mod);
     loaded++;
     spinner.update(`Loading events (${loaded}/${files.length}) — ${mod.config.name}`);
   }
@@ -204,12 +204,12 @@ function watchScripts(api) {
         // If file was deleted, unload it
         if (!fs.existsSync(path.join(dir, filename))) {
           if (isCmd) {
-            if (global.ST.cmds.has(name)) {
+            if (global.GoatBot.cmds.has(name)) {
               unloadCmd(name);
               log.success("AUTO LOAD", `Command ${name} unloaded (file deleted).`);
             }
           } else {
-            if (global.ST.events.has(name)) {
+            if (global.GoatBot.events.has(name)) {
               unloadEvent(name);
               log.success("AUTO LOAD", `Event ${name} unloaded (file deleted).`);
             }
@@ -219,11 +219,11 @@ function watchScripts(api) {
 
         // It was added or changed
         if (isCmd) {
-          if (global.ST.cmds.has(name)) unloadCmd(name);
+          if (global.GoatBot.cmds.has(name)) unloadCmd(name);
           const mod = await loadCmd(filename, api);
           log.success("AUTO LOAD", `Command ${mod.config.name} reloaded automatically.`);
         } else {
-          if (global.ST.events.has(name)) unloadEvent(name);
+          if (global.GoatBot.events.has(name)) unloadEvent(name);
           const mod = await loadEvent(filename, api);
           log.success("AUTO LOAD", `Event ${mod.config.name} reloaded automatically.`);
         }
@@ -248,7 +248,7 @@ async function loadScripts(api) {
   await loadCommands(api);
   await loadEvents(api);
 
-  if (global.ST.config.autoLoadScripts && global.ST.config.autoLoadScripts.enable) {
+  if (global.GoatBot.config.autoLoadScripts && global.GoatBot.config.autoLoadScripts.enable) {
     watchScripts(api);
     log.info("AUTO LOAD", "Watching scripts for changes...");
   }
@@ -268,9 +268,9 @@ async function loadCmd(cmdName, api) {
   if (mod && mod.__error) throw mod.__error;
   if (!mod || !mod.config || !mod.config.name) throw new Error("Invalid command structure in: " + file);
   if (typeof mod.onLoad === "function") {
-    await mod.onLoad({ api, threadsData: global.ST.DB.threads, userData: global.ST.DB.users }).catch(() => { });
+    await mod.onLoad({ api, threadsData: global.GoatBot.DB.threads, userData: global.GoatBot.DB.users }).catch(() => { });
   }
-  global.ST.cmds.set(mod.config.name.toLowerCase(), mod);
+  global.GoatBot.cmds.set(mod.config.name.toLowerCase(), mod);
   return mod;
 }
 
@@ -279,8 +279,8 @@ async function loadCmd(cmdName, api) {
  */
 function unloadCmd(cmdName) {
   const key = cmdName.toLowerCase().replace(".js", "");
-  if (!global.ST.cmds.has(key)) throw new Error("Command not loaded: " + key);
-  global.ST.cmds.delete(key);
+  if (!global.GoatBot.cmds.has(key)) throw new Error("Command not loaded: " + key);
+  global.GoatBot.cmds.delete(key);
 }
 
 /**
@@ -303,9 +303,9 @@ async function loadEvent(evtName, api) {
   if (mod && mod.__error) throw mod.__error;
   if (!mod || !mod.config || !mod.config.name) throw new Error("Invalid event structure in: " + file);
   if (typeof mod.onLoad === "function") {
-    await mod.onLoad({ api, threadsData: global.ST.DB.threads, userData: global.ST.DB.users }).catch(() => { });
+    await mod.onLoad({ api, threadsData: global.GoatBot.DB.threads, userData: global.GoatBot.DB.users }).catch(() => { });
   }
-  global.ST.events.set(mod.config.name.toLowerCase(), mod);
+  global.GoatBot.events.set(mod.config.name.toLowerCase(), mod);
   return mod;
 }
 
@@ -314,8 +314,8 @@ async function loadEvent(evtName, api) {
  */
 function unloadEvent(evtName) {
   const key = evtName.toLowerCase().replace(".js", "");
-  if (!global.ST.events.has(key)) throw new Error("Event not loaded: " + key);
-  global.ST.events.delete(key);
+  if (!global.GoatBot.events.has(key)) throw new Error("Event not loaded: " + key);
+  global.GoatBot.events.delete(key);
 }
 
 /**

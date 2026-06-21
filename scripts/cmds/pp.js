@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 module.exports = {
   config: {
@@ -22,7 +22,7 @@ module.exports = {
 
     let ppUrl = null;
     try {
-      ppUrl = await global.ST.DB.userData.getAvatarUrl(api, targetUID);
+      ppUrl = await global.GoatBot.DB.userData.getAvatarUrl(api, targetUID);
     } catch (_) { }
 
     const { jidToPhone } = require("../../utils.js");
@@ -32,7 +32,7 @@ module.exports = {
       const axios = require("axios");
       const res = await axios.get(ppUrl, { responseType: "arraybuffer", timeout: 5000 });
       const buffer = Buffer.from(res.data);
-      
+
       await api.sendImage(buffer, event.threadID, `📸 Profile picture of ${phone}`);
       await message.react("✅");
     } catch (e) {

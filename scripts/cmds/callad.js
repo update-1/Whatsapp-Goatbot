@@ -17,7 +17,7 @@ const langs = {
 };
 
 function getLang(key, ...params) {
-  const langCode = global.ST?.config?.language || "en";
+  const langCode = global.GoatBot?.config?.language || "en";
   const langObj = langs[langCode] || langs.en;
   let text = langObj[key] || langs.en[key] || "";
   for (let i = 0; i < params.length; i++) {
@@ -44,7 +44,7 @@ async function resolveAdminJID(api, uid) {
 
   // Check database records
   try {
-    const allUsers = await global.ST.DB.users.getAll();
+    const allUsers = await global.GoatBot.DB.users.getAll();
     const keys = Object.keys(allUsers || {});
     const lidKey = bare + "@lid";
     const phoneKey = bare + "@s.whatsapp.net";
@@ -52,7 +52,8 @@ async function resolveAdminJID(api, uid) {
     if (keys.includes(phoneKey)) return phoneKey;
   } catch (_) { }
 
-  return bare + "@s.whatsapp.net";
+  const isLid = /^[12]\d{14}$/.test(bare);
+  return bare + (isLid ? "@lid" : "@s.whatsapp.net");
 }
 
 module.exports = {
@@ -71,7 +72,7 @@ module.exports = {
   },
 
   onStart: async function ({ args, message, event, userData, threadsData, api }) {
-    const adminBot = global.ST?.config?.adminBot || [];
+    const adminBot = global.GoatBot?.config?.adminBot || [];
     if (!args[0]) {
       return message.reply(getLang("missingMessage"));
     }
@@ -138,7 +139,7 @@ module.exports = {
         const sentID = messageSend?.key?.id || messageSend?.id || (Array.isArray(messageSend) && messageSend[0]?.key?.id) || null;
         if (sentID) {
           successIDs.push(uid);
-          global.ST.onReply.set(sentID, {
+          global.GoatBot.onReply.set(sentID, {
             commandName: "callad",
             messageID: sentID,
             threadID,
@@ -242,7 +243,7 @@ module.exports = {
 
           const infoID = info?.key?.id || info?.id || (Array.isArray(info) && info[0]?.key?.id) || null;
           if (infoID) {
-            global.ST.onReply.set(infoID, {
+            global.GoatBot.onReply.set(infoID, {
               commandName: "callad",
               messageID: infoID,
               messageIDSender: event.messageID,
@@ -308,7 +309,7 @@ module.exports = {
 
           const infoID = info?.key?.id || info?.id || (Array.isArray(info) && info[0]?.key?.id) || null;
           if (infoID) {
-            global.ST.onReply.set(infoID, {
+            global.GoatBot.onReply.set(infoID, {
               commandName: "callad",
               messageID: infoID,
               messageIDSender: event.messageID,

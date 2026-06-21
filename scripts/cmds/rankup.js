@@ -37,8 +37,8 @@ module.exports = {
       if (!thread.data) thread.data = {};
       thread.data.rankup = isRankupOn;
 
-      if (global.ST && global.ST.DB && global.ST.DB.threads) {
-        await global.ST.DB.threads.set(event.threadID, { data: thread.data });
+      if (global.GoatBot && global.GoatBot.DB && global.GoatBot.DB.threads) {
+        await global.GoatBot.DB.threads.set(event.threadID, { data: thread.data });
       }
 
       if (isRankupOn) {

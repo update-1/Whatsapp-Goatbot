@@ -57,10 +57,10 @@ async function installFile({ api, message, filePath, fileName, code }) {
       );
     }
 
-    global.ST.cmds.set(mod.config.name.toLowerCase(), mod);
+    global.GoatBot.cmds.set(mod.config.name.toLowerCase(), mod);
 
     if (typeof mod.onLoad === "function") {
-      await mod.onLoad({ api, threadsData: global.ST.DB?.threads, userData: global.ST.DB?.users }).catch(() => { });
+      await mod.onLoad({ api, threadsData: global.GoatBot.DB?.threads, userData: global.GoatBot.DB?.users }).catch(() => { });
     }
 
     return message.reply(
@@ -166,7 +166,7 @@ module.exports = {
           `⚠️ | The command file already exists, are you sure you want to overwrite the old command file?\nReact to this message to continue`
         );
         if (warn?.messageID) {
-          global.ST.onReaction.set(warn.messageID, {
+          global.GoatBot.onReaction.set(warn.messageID, {
             commandName: "cmd",
             author: event.senderID,
             type: "install_overwrite",
@@ -202,9 +202,9 @@ module.exports = {
             failed++;
             continue;
           }
-          global.ST.cmds.set(mod.config.name.toLowerCase(), mod);
+          global.GoatBot.cmds.set(mod.config.name.toLowerCase(), mod);
           if (typeof mod.onLoad === "function") {
-            await mod.onLoad({ api, threadsData: global.ST.DB?.threads, userData: global.ST.DB?.users }).catch(() => { });
+            await mod.onLoad({ api, threadsData: global.GoatBot.DB?.threads, userData: global.GoatBot.DB?.users }).catch(() => { });
           }
           loaded++;
         } catch (err) {

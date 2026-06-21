@@ -18,9 +18,9 @@ module.exports = {
     text += `Thread ID: ${event.threadID}\n`;
     text += `Type: ${event.isGroup ? "Group" : "DM"}`;
 
-    if (event.isGroup && global.ST.DB) {
+    if (event.isGroup && global.GoatBot.DB) {
       try {
-        const thread = await global.ST.DB.threadsData(event.threadID);
+        const thread = await global.GoatBot.DB.threadsData(event.threadID);
         if (thread && thread.name) text += `\nName: ${thread.name}`;
         if (thread && thread.totalMember) text += `\nMembers: ${thread.totalMember}`;
       } catch (_) { }

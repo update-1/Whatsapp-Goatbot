@@ -23,7 +23,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 // ─── Config helpers ───────────────────────────────────────────────────────────
 function loadConfig() {
   try {
-    global.ST.config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+    global.GoatBot.config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
   } catch (e) {
     global.log.err("CONFIG", "Failed to load config.json: " + e.message);
     process.exit(1);
@@ -32,9 +32,9 @@ function loadConfig() {
 
 function loadConfigCommands() {
   try {
-    global.ST.configCommands = JSON.parse(fs.readFileSync(CMD_CFG_PATH, "utf8"));
+    global.GoatBot.configCommands = JSON.parse(fs.readFileSync(CMD_CFG_PATH, "utf8"));
   } catch (e) {
-    global.ST.configCommands = { commandUnload: [], commandEventUnload: [], commandAllowLoad: [] };
+    global.GoatBot.configCommands = { commandUnload: [], commandEventUnload: [], commandAllowLoad: [] };
   }
 }
 
@@ -44,7 +44,7 @@ function setupWatchers() {
     clearTimeout(_cfgD);
     _cfgD = setTimeout(() => {
       try {
-        global.ST.config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+        global.GoatBot.config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
         global.log.info("CONFIG", "config.json reloaded ✓");
       } catch (_) { }
     }, 500);
@@ -53,7 +53,7 @@ function setupWatchers() {
     clearTimeout(_cmdD);
     _cmdD = setTimeout(() => {
       try {
-        global.ST.configCommands = JSON.parse(fs.readFileSync(CMD_CFG_PATH, "utf8"));
+        global.GoatBot.configCommands = JSON.parse(fs.readFileSync(CMD_CFG_PATH, "utf8"));
         global.log.info("CONFIG", "configCommands.json reloaded ✓");
       } catch (_) { }
     }, 500);
@@ -66,8 +66,8 @@ function saveToConfig(phoneNumber, loginMode) {
     cfg.phoneNumber = phoneNumber;
     cfg.loginMode = loginMode;
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2), "utf8");
-    global.ST.config.phoneNumber = phoneNumber;
-    global.ST.config.loginMode = loginMode;
+    global.GoatBot.config.phoneNumber = phoneNumber;
+    global.GoatBot.config.loginMode = loginMode;
   } catch (e) {
     global.log.warn("LOGIN", "Could not save to config.json: " + e.message);
   }
@@ -81,7 +81,7 @@ function saveToConfig(phoneNumber, loginMode) {
  * @returns {Promise<boolean>} true if session was imported
  */
 async function checkAndImportSession() {
-  const cfg = global.ST.config;
+  const cfg = global.GoatBot.config;
   const sessionId = (process.env.SESSION_ID || cfg.sessionID || "").trim();
 
   if (!sessionId) return false;
@@ -163,7 +163,7 @@ async function checkAndImportSession() {
         const rawCfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
         rawCfg.sessionID = "";
         fs.writeFileSync(CONFIG_PATH, JSON.stringify(rawCfg, null, 2), "utf8");
-        global.ST.config.sessionID = "";
+        global.GoatBot.config.sessionID = "";
       } catch (_) { }
 
       global.log.success("SESSION", "✅ Session imported to " + authFolder + "/creds.json");
@@ -216,9 +216,9 @@ async function checkRestartFile(api) {
 
 // ─── Connect ──────────────────────────────────────────────────────────────────
 async function connect() {
-  const cfg = global.ST.config;
+  const cfg = global.GoatBot.config;
   const authFolder = path.resolve(process.cwd(), cfg.authFolder || "./auth");
-  const wca = require("@sheikhtamim/wca");
+  const baileys = require("./baileys.js");
   const c = global.utils.colors;
 
   let phoneNumber = (cfg.phoneNumber || "").trim();
@@ -226,7 +226,7 @@ async function connect() {
 
   if (hasAuth(authFolder)) {
     global.log.info("LOGIN", "Auth found — restoring session…");
-    return await attemptConnect(wca, { authFolder, phoneNumber: null, usePairingCode: false, printQR: false });
+    return await attemptConnect(baileys, { authFolder, phoneNumber: null, usePairingCode: false, printQR: false });
   }
 
   if (!phoneNumber) {
@@ -251,26 +251,26 @@ async function connect() {
   const usePairingCode = loginMode === "pair";
   global.log.info("LOGIN", "Mode: " + (usePairingCode ? "Pair Code" : "QR Code") + " | Number: " + phoneNumber);
 
-  return await attemptConnect(wca, { authFolder, phoneNumber, usePairingCode, printQR: !usePairingCode });
+  return await attemptConnect(baileys, { authFolder, phoneNumber, usePairingCode, printQR: !usePairingCode });
 }
 
-function attemptConnect(wca, opts) {
+function attemptConnect(baileys, opts) {
   return new Promise((resolve, reject) => {
     global.utils.spinner.start("Connecting to WhatsApp…", { preset: "dots" });
 
     let resolved = false;
 
-    wca({
+    baileys({
       authFolder: opts.authFolder,
       phoneNumber: opts.phoneNumber,
       usePairingCode: opts.usePairingCode,
       printQR: opts.printQR,
       skipUpdateCheck: true,
       globalOptions: {
-        selfListen: global.ST.config.listen?.selfListen ?? false,
-        listenEvents: global.ST.config.listen?.listenEvents ?? true,
-        autoMarkDelivery: global.ST.config.listen?.autoMarkDelivery ?? false,
-        autoReconnect: global.ST.config.listen?.autoReconnect ?? true,
+        selfListen: global.GoatBot.config.listen?.selfListen ?? false,
+        listenEvents: global.GoatBot.config.listen?.listenEvents ?? true,
+        autoMarkDelivery: global.GoatBot.config.listen?.autoMarkDelivery ?? false,
+        autoReconnect: global.GoatBot.config.listen?.autoReconnect ?? true,
         enableTypingIndicator: false,
       },
     }, (err, api) => {
@@ -304,20 +304,103 @@ function attemptConnect(wca, opts) {
 
 // ─── Main startup — all 7 steps ───────────────────────────────────────────────
 module.exports = async function startBot() {
+  // ─── Welcome Logo Banner ──────────────────────────────────────────────────
+  const packageJson = require("../../package.json");
+  const currentVersion = packageJson.version || "1.0.0";
+  const grad = (text, stops) => global.gradient ? global.gradient(text, stops) : text;
+
+  const titles = [
+    [
+      "░██╗░░░░░░░██╗██╗░░██╗░█████╗░████████╗░██████╗░█████╗░██████╗░██████╗░  ██████╗░░█████╗░████████╗",
+      "░██║░░██╗░░██║██║░░██║██╔══██╗╚══██╔══╝██╔════╝██╔══██╗██╔══██╗██╔══██╗  ██╔══██╗██╔══██╗╚══██╔══╝",
+      "░╚██╗████╗██╔╝███████║███████║░░░██║░░░╚█████╗░███████║██████╔╝██████╔╝  ██████╦╝██║░░██║░░░██║░░░",
+      "░░████╔═████║░██╔══██║██╔══██║░░░██║░░░░╚═══██╗██╔══██║██╔═══╝░██╔═══╝░  ██╔══██╗██║░░██║░░░██║░░░",
+      "░░╚██╔╝░╚██╔╝░██║░░██║██║░░██║░░░██║░░░██████╔╝██║░░██║██║░░░░░██║░░░░░  ██████╦╝╚█████╔╝░░░██║░░░",
+      "░░░╚═╝░░░╚═╝░░╚═╝░░╚═╝╚═╝░░╚═╝░░░╚═╝░░░╚═════╝░╚═╝░░╚═╝╚═╝░░░░░╚═╝░░░░░  ╚═════╝░░╚════╝░░░░╚═╝░░░"
+    ],
+    [
+      "█░█░█ █░█ ▄▀█ ▀█▀ █▀ ▄▀█ █▀█ █▀█   █▄▄ █▀█ ▀█▀",
+      "▀▄▀▄▀ █▀█ █▀█ ░█░ ▄█ █▀█ █▀▀ █▀▀   █▄█ █▄█ ░█░"
+    ],
+    [
+      "W H A T S A P P  G O A T B O T @" + currentVersion
+    ],
+    [
+      "WHATSAPP-GOATBOT"
+    ]
+  ];
+  const maxWidth = process.stdout.columns || 80;
+  const title = maxWidth > 100 ?
+    titles[0] :
+    maxWidth > 45 ?
+      titles[1] :
+      maxWidth > 25 ?
+        titles[2] :
+        titles[3];
+
+  let widthConsole = process.stdout.columns || 80;
+  if (widthConsole > 50)
+    widthConsole = 50;
+
+  function createLine(content, isMaxWidth = false) {
+    if (!content)
+      return Array(isMaxWidth ? (process.stdout.columns || 80) : widthConsole).fill("─").join("");
+    else {
+      content = ` ${content.trim()} `;
+      const lengthContent = content.length;
+      const lengthLine = isMaxWidth ? (process.stdout.columns || 80) - lengthContent : widthConsole - lengthContent;
+      let left = Math.floor(lengthLine / 2);
+      if (left < 0 || isNaN(left))
+        left = 0;
+      const lineOne = Array(left).fill("─").join("");
+      return lineOne + content + lineOne;
+    }
+  }
+
+  function centerText(text, length) {
+    const columns = process.stdout.columns || 80;
+    const left = Math.max(0, Math.floor((columns - length) / 2));
+    console.log(" ".repeat(left) + text);
+  }
+
+  console.log(grad(createLine(null, true), ["#f5af19", "#f12711"]));
+  console.log();
+  for (const text of title) {
+    const textColor = grad(text, ["#FA8BFF", "#2BD2FF", "#2BFF88"]);
+    centerText(textColor, text.length);
+  }
+  let subTitle = `Whatsapp-Goatbot V2@${currentVersion} - A simple Whatsapp Chat Bot use personal account`;
+  const subTitleArray = [];
+  if (subTitle.length > maxWidth) {
+    while (subTitle.length > maxWidth) {
+      let lastSpace = subTitle.slice(0, maxWidth).lastIndexOf(' ');
+      lastSpace = lastSpace == -1 ? maxWidth : lastSpace;
+      subTitleArray.push(subTitle.slice(0, lastSpace).trim());
+      subTitle = subTitle.slice(lastSpace).trim();
+    }
+    subTitle ? subTitleArray.push(subTitle) : '';
+  } else {
+    subTitleArray.push(subTitle);
+  }
+  const author = "Created by EF-Prime-MD";
+  const srcUrl = "Source code: https://github.com/efkidgamerdev";
+  const fakeRelease = "ALL VERSIONS NOT RELEASED HERE ARE FAKE";
+  for (const t of subTitleArray) {
+    const textColor2 = grad(t, ["#9F98E8", "#AFF6CF"]);
+    centerText(textColor2, t.length);
+  }
+  centerText(grad(author, ["#9F98E8", "#AFF6CF"]), author.length);
+  centerText(grad(srcUrl, ["#9F98E8", "#AFF6CF"]), srcUrl.length);
+  centerText(grad(fakeRelease, ["#f5af19", "#f12711"]), fakeRelease.length);
+  console.log();
 
   // ── Step 1: Config ────────────────────────────────────────────────────────
   global.log.divider("STEP 1 — CONFIG");
   loadConfig();
   loadConfigCommands();
   setupWatchers();
-  global.log.success("STEP 1", "Config loaded — prefix: " + (global.ST.config.prefix || "!") +
-    " | bot: " + (global.ST.config.botName || "WCA Bot"));
-
-  // Start Express & Socket.IO early so the dashboard / Link Device is accessible during connection startup
-  global.log.divider("EXPRESS + SOCKET STARTUP");
-  const { startExpress } = require("./socketIo.js");
-  await startExpress();
-  require("../autoUptime.js").startAutoUptime();
+  global.log.success("STEP 1", "Config loaded — prefix: " + (global.GoatBot.config.prefix || "!") +
+    " | bot: " + (global.GoatBot.config.botName || "EF-Prime Bot"));
 
   await sleep(120);
 
@@ -325,7 +408,7 @@ module.exports = async function startBot() {
   global.log.divider("STEP 2 — SESSION / CONNECT");
   await checkAndImportSession();
   const api = await connect();
-  global.ST.api = api;
+  global.GoatBot.api = api;
 
   // Send restart notification if applicable
   await checkRestartFile(api);
@@ -344,8 +427,21 @@ module.exports = async function startBot() {
 
   await sleep(120);
 
+  // Start Express & Socket.IO now that API and commands are ready
+  global.log.divider("EXPRESS + SOCKET STARTUP");
+  const { startExpress, getApp, getIO } = require("./socketIo.js");
+  await startExpress();
+
+  // Start Dashboard Backend
+  const { startDashboard } = require("../../dashboard/index.js");
+  await startDashboard(getApp(), getIO());
+
+  require("../autoUptime.js").startAutoUptime();
+
+  await sleep(120);
+
   // ── Step 6: Admin list ────────────────────────────────────────────────────
-  const admins = global.ST.config.adminBot || [];
+  const admins = global.GoatBot.config.adminBot || [];
   const { colors: _c } = require("../../logger/colors.js");
   global.log.divider("STEP 6 — ADMINS");
   if (admins.length === 0) {
@@ -370,7 +466,7 @@ module.exports = async function startBot() {
       // 2) Try DB as fallback
       if (!name) {
         try {
-          const userRec = await global.ST.DB.userData(uid);
+          const userRec = await global.GoatBot.DB.userData(uid);
           if (userRec && userRec.name && userRec.name !== "Unknown") name = userRec.name;
         } catch (_) { }
       }
@@ -388,11 +484,11 @@ module.exports = async function startBot() {
   await sleep(150);
 
   // ── Step 7: Ready ─────────────────────────────────────────────────────────
-  const elapsed = ((Date.now() - global.ST.startTime) / 1000).toFixed(2);
-  const cmds = global.ST.cmds.size;
-  const events = global.ST.events.size;
-  const prefix = global.ST.config.prefix || "!";
-  const botName = global.ST.config.botName || "WCA Bot";
+  const elapsed = ((Date.now() - global.GoatBot.startTime) / 1000).toFixed(2);
+  const cmds = global.GoatBot.cmds.size;
+  const events = global.GoatBot.events.size;
+  const prefix = global.GoatBot.config.prefix || "!";
+  const botName = global.GoatBot.config.botName || "Baileys Bot";
 
   global.log.success("STEP 7",
     botName + " ready in " + elapsed + "s  |  " +
@@ -410,7 +506,11 @@ module.exports = async function startBot() {
 
   api.listen((err, event) => {
     // listenMqtt passes stop_listen as first arg (not a real error)
-    if (err && err.type === "stop_listen") return;
+    if (err && err.type === "stop_listen") {
+      global.log.warn("CONNECTION", "Connection closed — restarting process for a clean reconnect...");
+      process.exit(2);
+      return;
+    }
     if (err && !(err instanceof Error)) {
       // It's a non-Error first-arg event — treat as event
       handlerEvent(api, err).catch(() => { });

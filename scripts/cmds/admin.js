@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 module.exports = {
   config: {
@@ -28,10 +28,16 @@ module.exports = {
     try {
       if (action === "promote") {
         await api.promoteAdmin(event.threadID, [targetUID]);
-        return message.reply(`✅ *${phone}* has been promoted to group admin.`);
+        return message.reply({
+          body: `✅ @${phone} has been promoted to group admin.`,
+          mentions: [targetUID]
+        });
       } else {
         await api.demoteAdmin(event.threadID, [targetUID]);
-        return message.reply(`✅ *${phone}* has been demoted from group admin.`);
+        return message.reply({
+          body: `✅ @${phone} has been demoted from group admin.`,
+          mentions: [targetUID]
+        });
       }
     } catch (e) {
       return message.reply("❌ Failed: " + e.message + "\n(Make sure the bot is a group admin.)");

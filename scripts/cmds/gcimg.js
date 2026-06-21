@@ -8,7 +8,7 @@ const PROFILE_SIZE = 42;
 
 async function fetchAvatar(api, jid) {
     try {
-        const url = await global.ST.DB.userData.getAvatarUrl(api, jid);
+        const url = await global.GoatBot.DB.userData.getAvatarUrl(api, jid);
         const res = await axios.get(url, { responseType: "arraybuffer", timeout: 8000 });
         return Buffer.from(res.data);
     } catch { return null; }

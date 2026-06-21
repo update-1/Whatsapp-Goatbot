@@ -1,6 +1,6 @@
 "use strict";
 
-const log     = require("../../logger/log.js");
+const log = require("../../logger/log.js");
 const spinner = require("../../logger/spinner.js");
 const { attachGlobalDB, userData, threadsData } = require("../../database/controller/index.js");
 
@@ -11,8 +11,8 @@ const { attachGlobalDB, userData, threadsData } = require("../../database/contro
 async function loadData(api) {
   log.divider("STEP 3 — DATABASE");
 
-  const cfg     = global.ST.config;
-  const dbType  = (cfg.database && cfg.database.type) || "json";
+  const cfg = global.GoatBot.config;
+  const dbType = (cfg.database && cfg.database.type) || "json";
 
   // ── Connect MongoDB if required ────────────────────────────────────────────
   if (dbType === "mongodb") {
@@ -24,7 +24,7 @@ async function loadData(api) {
     } catch (e) {
       spinner.fail("MongoDB connection failed: " + e.message);
       log.warn("DATABASE", "Falling back to JSON database.");
-      global.ST.config.database.type = "json";
+      global.GoatBot.config.database.type = "json";
     }
   } else {
     log.info("DATABASE", "Using JSON file storage.");
@@ -36,11 +36,11 @@ async function loadData(api) {
   // ── Count existing records ─────────────────────────────────────────────────
   spinner.start("Loading database…");
   try {
-    const userCount   = await userData.count();
+    const userCount = await userData.count();
     const threadCount = await threadsData.count();
     spinner.succeed(`Database ready — ${userCount} user(s), ${threadCount} thread(s)`);
 
-    log.success("STEP 3", `Users: ${userCount} | Threads: ${threadCount} | Type: ${global.ST.config.database.type}`);
+    log.success("STEP 3", `Users: ${userCount} | Threads: ${threadCount} | Type: ${global.GoatBot.config.database.type}`);
   } catch (e) {
     spinner.fail("Database load error: " + e.message);
     log.err("DATABASE", e.message);

@@ -30,7 +30,7 @@ module.exports = {
     }
 
     try {
-      const targetUrl = await global.ST.DB.userData.getAvatarUrl(api, targetUID);
+      const targetUrl = await global.GoatBot.DB.userData.getAvatarUrl(api, targetUID);
       const res = await axios.get(targetUrl, { responseType: 'arraybuffer', timeout: 5000 });
       const avatarBuffer = Buffer.from(res.data);
 

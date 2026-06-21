@@ -1,14 +1,12 @@
 {
-  "name": "wca-bot",
-  "version": "1.0.0",
-  "description": "WhatsApp Bot using WCA (Baileys-based)",
+  "name": "Whatsapp-Goatbot",
+  "version": "1.1.1",
+  "description": "WhatsApp Bot using @whiskeysockets/baileys",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@innovatorssoft/baileys": "^7.4.3",
-    "@sheikhtamim/wca": "^1.1.1",
     "@whiskeysockets/baileys": "^6.7.21",
     "@zorner/discord-image-generation": "^1.0.3",
     "awesome-phonenumber": "^7.2.0",

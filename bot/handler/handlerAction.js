@@ -1,6 +1,6 @@
 "use strict";
 
-const { normUID } = require("@sheikhtamim/wca/utils");
+const { normUID } = require("../login/baileys.js");
 
 /**
  * Normalize admin check — compares bare numeric IDs so both phone JIDs and
@@ -26,13 +26,13 @@ function isAdminUID(senderID, adminList) {
  * @returns {Promise<boolean>} true = allowed, false = blocked
  */
 async function handlerAction(api, event) {
-  const cfg = global.ST.config;
-  const fb  = cfg.featureBox || {};
+  const cfg = global.GoatBot.config;
+  const fb = cfg.featureBox || {};
 
-  const senderID  = event.senderID;
-  const threadID  = event.threadID;
+  const senderID = event.senderID;
+  const threadID = event.threadID;
   const adminList = cfg.adminBot || [];
-  const isAdmin   = isAdminUID(senderID, adminList);
+  const isAdmin = isAdminUID(senderID, adminList);
 
   // ── Handle reaction-to-unsend ─────────────────────────────────────────────
   if (event.type === "message_reaction") {
@@ -43,7 +43,7 @@ async function handlerAction(api, event) {
           const msgKey = { remoteJid: threadID, id: event.reactionKey.id, fromMe: true };
           await api.deleteMessage(threadID, msgKey, true);
         } catch (e) {
-          try { global.log.warn("UNSEND", "React delete failed: " + e.message); } catch (_) {}
+          try { global.log.warn("UNSEND", "React delete failed: " + e.message); } catch (_) { }
         }
         return false; // consumed — stop further processing
       }
@@ -75,11 +75,11 @@ async function handlerAction(api, event) {
 
   // ── Ban check ────────────────────────────────────────────────────────────
   try {
-    if (global.ST.DB && global.ST.DB.userData) {
-      const user = await global.ST.DB.userData(senderID);
+    if (global.GoatBot.DB && global.GoatBot.DB.userData) {
+      const user = await global.GoatBot.DB.userData(senderID);
       if (user && user.isBan) return false;
     }
-  } catch (_) {}
+  } catch (_) { }
 
   return true;
 }

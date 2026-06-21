@@ -17,7 +17,7 @@ module.exports = {
     // Only fire for group-type events, not plain messages
     if (event.type === "message") return;
 
-    for (const [, cmd] of global.ST.cmds) {
+    for (const [, cmd] of global.GoatBot.cmds) {
       if (typeof cmd.onEvent === "function") {
         try {
           await cmd.onEvent({ api, event, message: null, threadsData, userData });

@@ -32,8 +32,8 @@ module.exports = {
     text += `JID: ${targetUID}`;
 
     try {
-      if (global.ST.DB && global.ST.DB.userData) {
-        const user = await global.ST.DB.userData(targetUID);
+      if (global.GoatBot.DB && global.GoatBot.DB.userData) {
+        const user = await global.GoatBot.DB.userData(targetUID);
         if (user && user.name && user.name !== "Unknown") {
           text = `📋 *User Info*\n` +
             `Name: ${user.name}\n` +

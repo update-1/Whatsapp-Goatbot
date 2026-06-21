@@ -14,7 +14,7 @@ module.exports = {
   },
 
   onStart: async ({ api, event, message }) => {
-    const cc = global.ST.configCommands || {};
+    const cc = global.GoatBot.configCommands || {};
 
     let text = "⚙️ *configCommands.json*\n\n";
     text += `📦 Command Unload (${(cc.commandUnload || []).length}):\n`;

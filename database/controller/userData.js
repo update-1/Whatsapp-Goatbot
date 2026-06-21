@@ -1,6 +1,6 @@
 "use strict";
 
-const fs   = require("fs");
+const fs = require("fs");
 const path = require("path");
 
 const JSON_PATH = path.resolve(__dirname, "../../database/json/userData.json");
@@ -123,7 +123,7 @@ const mongoController = {
 };
 
 function getController() {
-  const type = (global.ST && global.ST.config && global.ST.config.database && global.ST.config.database.type) || "json";
+  const type = (global.GoatBot && global.GoatBot.config && global.GoatBot.config.database && global.GoatBot.config.database.type) || "json";
   return type === "mongodb" ? mongoController : jsonController;
 }
 
@@ -142,7 +142,7 @@ async function userData(uid) {
  * @param {string} uid The user's JID
  * @returns {Promise<string>}
  */
-userData.getAvatarUrl = async function(api, uid) {
+userData.getAvatarUrl = async function (api, uid) {
   try {
     const url = await api.getProfilePicture(uid, 'image');
     return url || "https://i.ibb.co.com/rKcj3y80/150fa8800b0a0d5633abc1d1c4db3d87.jpg";
@@ -154,9 +154,9 @@ userData.getAvatarUrl = async function(api, uid) {
 module.exports = {
   userData,
   getAvatarUrl: userData.getAvatarUrl,
-  get:    (uid)         => getController().get(uid),
-  set:    (uid, v, f)   => getController().set(uid, v, f),
-  delete: (uid)         => getController().delete(uid),
-  getAll: ()            => getController().getAll(),
-  count:  ()            => getController().count(),
+  get: (uid) => getController().get(uid),
+  set: (uid, v, f) => getController().set(uid, v, f),
+  delete: (uid) => getController().delete(uid),
+  getAll: () => getController().getAll(),
+  count: () => getController().count(),
 };

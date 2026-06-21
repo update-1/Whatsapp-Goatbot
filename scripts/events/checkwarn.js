@@ -15,10 +15,10 @@ module.exports = {
    */
   onStart: async ({ api, event, threadsData, userData }) => {
     if (event.type !== "message") return;
-    if (!event.senderID || !global.ST.DB) return;
+    if (!event.senderID || !global.GoatBot.DB) return;
 
     try {
-      const user = await global.ST.DB.userData(event.senderID);
+      const user = await global.GoatBot.DB.userData(event.senderID);
       if (!user) return;
 
       // Already banned
@@ -26,8 +26,8 @@ module.exports = {
 
       // Check if warn count exceeds max
       if ((user.warnCount || 0) >= MAX_WARNS) {
-        await global.ST.DB.users.set(event.senderID, true, "isBan");
-        await global.ST.DB.users.set(event.senderID, `Auto-banned: exceeded ${MAX_WARNS} warnings`, "banReason");
+        await global.GoatBot.DB.users.set(event.senderID, true, "isBan");
+        await global.GoatBot.DB.users.set(event.senderID, `Auto-banned: exceeded ${MAX_WARNS} warnings`, "banReason");
 
         const phone = event.senderID.split(":")[0].split("@")[0];
         try {

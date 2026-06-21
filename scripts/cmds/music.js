@@ -135,7 +135,7 @@ module.exports = {
 
       const info = await message.reply(msg);
       if (info?.messageID) {
-        global.ST.onReply.set(info.messageID, {
+        global.GoatBot.onReply.set(info.messageID, {
           commandName: module.exports.config.name,
           author: event.senderID,
           videos: top,
@@ -158,7 +158,7 @@ module.exports = {
 
     const replyID = event.messageReply?.messageID || event.replyToMessage?.messageID;
     if (replyID) {
-      global.ST.onReply.delete(replyID);
+      global.GoatBot.onReply.delete(replyID);
       await message.unsend(replyID).catch(() => { });
     }
 

@@ -59,7 +59,7 @@ The `checkAndImportSession()` function in `bot/login/login.js`:
 const zlib = require('zlib');
 
 async function checkAndImportSession() {
-  const cfg       = global.ST.config;
+  const cfg       = global.GoatBot.config;
   const sessionId = (process.env.SESSION_ID || cfg.sessionID || "").trim();
 
   if (!sessionId) return false;

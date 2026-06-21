@@ -46,8 +46,8 @@ module.exports = {
         const rewardCoin = 1000;
 
         const u = await userData(senderID);
-        if (global.ST && global.ST.DB && global.ST.DB.users) {
-          await global.ST.DB.users.set(senderID, {
+        if (global.GoatBot && global.GoatBot.DB && global.GoatBot.DB.users) {
+          await global.GoatBot.DB.users.set(senderID, {
             money: (u.money || 0) + rewardCoin
           });
         }
@@ -57,11 +57,11 @@ module.exports = {
         if (!t.data.flagWins) t.data.flagWins = {};
         t.data.flagWins[senderID] = (t.data.flagWins[senderID] || 0) + 1;
 
-        if (global.ST && global.ST.DB && global.ST.DB.threads) {
-          await global.ST.DB.threads.set(event.threadID, { data: t.data });
+        if (global.GoatBot && global.GoatBot.DB && global.GoatBot.DB.threads) {
+          await global.GoatBot.DB.threads.set(event.threadID, { data: t.data });
         }
 
-        global.ST.onReply.delete(botMsgID);
+        global.GoatBot.onReply.delete(botMsgID);
 
         try {
           if (botMsgID) {
@@ -80,12 +80,12 @@ module.exports = {
     } else {
       const newAttempts = attempts + 1;
       if (newAttempts >= maxAttempts) {
-        global.ST.onReply.delete(botMsgID);
+        global.GoatBot.onReply.delete(botMsgID);
         return message.reply(`❌ | Out of tries! The answer was: *${country}*`);
       }
 
       Reply.attempts = newAttempts;
-      global.ST.onReply.set(botMsgID, Reply);
+      global.GoatBot.onReply.set(botMsgID, Reply);
 
       return message.reply(`❌ | Wrong Answer! (${newAttempts}/${maxAttempts})`);
     }
@@ -114,7 +114,7 @@ module.exports = {
         const sentID = msgInfo?.key?.id;
 
         if (sentID) {
-          global.ST.onReply.set(sentID, {
+          global.GoatBot.onReply.set(sentID, {
             commandName: module.exports.config.name,
             messageID: sentID,
             country,
@@ -155,7 +155,7 @@ module.exports = {
       }
 
       if (args[0] === "reset") {
-        const isBotAdmin = global.ST.config.adminIDs && global.ST.config.adminIDs.includes(event.senderID);
+        const isBotAdmin = global.GoatBot.config.adminIDs && global.GoatBot.config.adminIDs.includes(event.senderID);
 
         let isAdmin = false;
         try {
@@ -167,8 +167,8 @@ module.exports = {
 
         const t = await threadsData(event.threadID);
         if (t.data) t.data.flagWins = {};
-        if (global.ST && global.ST.DB && global.ST.DB.threads) {
-          await global.ST.DB.threads.set(event.threadID, { data: t.data });
+        if (global.GoatBot && global.GoatBot.DB && global.GoatBot.DB.threads) {
+          await global.GoatBot.DB.threads.set(event.threadID, { data: t.data });
         }
         return message.reply("✅ | Leaderboard cleared.");
       }

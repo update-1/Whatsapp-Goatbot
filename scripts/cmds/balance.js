@@ -15,7 +15,7 @@ module.exports = {
   },
 
   onStart: async ({ api, event, args, message }) => {
-    if (!global.ST.DB) return message.reply("❌ Database not initialized.");
+    if (!global.GoatBot.DB) return message.reply("❌ Database not initialized.");
 
     // ── PAY COMMAND ──────────────────────────────────────────────────────────
     if (args[0] && args[0].toLowerCase() === "pay") {
@@ -30,15 +30,15 @@ module.exports = {
 
       const currency = "money";
 
-      const senderData = await global.ST.DB.userData(event.senderID);
-      const receiverData = await global.ST.DB.userData(targetUID);
+      const senderData = await global.GoatBot.DB.userData(event.senderID);
+      const receiverData = await global.GoatBot.DB.userData(targetUID);
 
       if ((senderData[currency] || 0) < amount) {
         return message.reply(`❌ You don't have enough ${currency}! (Your balance: ${senderData[currency] || 0})`);
       }
 
-      await global.ST.DB.users.set(event.senderID, { [currency]: (senderData[currency] || 0) - amount });
-      await global.ST.DB.users.set(targetUID, { [currency]: (receiverData[currency] || 0) + amount });
+      await global.GoatBot.DB.users.set(event.senderID, { [currency]: (senderData[currency] || 0) - amount });
+      await global.GoatBot.DB.users.set(targetUID, { [currency]: (receiverData[currency] || 0) + amount });
 
       return message.reply(`✅ Successfully transferred ${amount} ${currency.toUpperCase()}!`);
     }
@@ -48,7 +48,7 @@ module.exports = {
     const phone = jidToPhone(targetUID);
     const isSelf = targetUID === event.senderID;
 
-    const user = await global.ST.DB.userData(targetUID);
+    const user = await global.GoatBot.DB.userData(targetUID);
     const name = user.name && user.name !== "Unknown" ? user.name : phone;
 
     return message.reply(

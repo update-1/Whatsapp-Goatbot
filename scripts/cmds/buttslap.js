@@ -18,7 +18,7 @@ module.exports = {
   },
 
   onStart: async function ({ api, event, args, message }) {
-   let mentionJid = null;
+    let mentionJid = null;
     if (event.mentions && event.mentions.length > 0) {
       mentionJid = event.mentions[0];
     } else if (event.mentions && Object.keys(event.mentions).length > 0) {
@@ -34,8 +34,8 @@ module.exports = {
       const one = event.senderID;
       const two = mentionJid;
 
-      const oneUrl = await global.ST.DB.userData.getAvatarUrl(api, one);
-      const twoUrl = await global.ST.DB.userData.getAvatarUrl(api, two);
+      const oneUrl = await global.GoatBot.DB.userData.getAvatarUrl(api, one);
+      const twoUrl = await global.GoatBot.DB.userData.getAvatarUrl(api, two);
 
       const [resOne, resTwo] = await Promise.all([
         axios.get(oneUrl, { responseType: 'arraybuffer', timeout: 8000 }),

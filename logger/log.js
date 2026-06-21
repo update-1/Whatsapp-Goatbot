@@ -1,6 +1,27 @@
 "use strict";
 const { colors } = require("./colors.js");
 
+const logHistory = [];
+const MAX_LOGS = 200;
+
+const originalLog = console.log;
+console.log = function (...args) {
+  originalLog.apply(console, args);
+  const message = args.map(arg => {
+    if (arg && typeof arg === "object") {
+      try { return JSON.stringify(arg, null, 2); } catch (_) { return String(arg); }
+    }
+    return String(arg);
+  }).join(" ");
+
+  logHistory.push(message);
+  if (logHistory.length > MAX_LOGS) logHistory.shift();
+
+  if (global.GoatBot && global.GoatBot.io) {
+    global.GoatBot.io.emit("console_log", message);
+  }
+};
+
 let _moment;
 try { _moment = require("moment-timezone"); } catch (_) { _moment = null; }
 
@@ -79,8 +100,8 @@ const log = {
   banner(lines = []) {
     const width = 52;
     const border = colors.hex("#6c5ce7")("╔" + "═".repeat(width) + "╗");
-    const empty  = colors.hex("#6c5ce7")("║" + " ".repeat(width) + "║");
-    const foot   = colors.hex("#6c5ce7")("╚" + "═".repeat(width) + "╝");
+    const empty = colors.hex("#6c5ce7")("║" + " ".repeat(width) + "║");
+    const foot = colors.hex("#6c5ce7")("╚" + "═".repeat(width) + "╝");
     console.log(border);
     for (const line of lines) {
       const pad = Math.max(0, width - line.length);
@@ -94,3 +115,5 @@ const log = {
 };
 
 module.exports = log;
+module.exports.getHistory = () => logHistory;
+module.exports.clearHistory = () => { logHistory.length = 0; };

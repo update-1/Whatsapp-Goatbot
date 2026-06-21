@@ -15,9 +15,9 @@ module.exports = {
   },
 
   onStart: async ({ event, args, message, threadsData }) => {
-    const globalPrefix = global.ST.config.prefix || "!";
+    const globalPrefix = global.GoatBot.config.prefix || "!";
     const chatType = event.isGroup ? "group" : "DM";
-    const adminList = global.ST.config.adminBot || [];
+    const adminList = global.GoatBot.config.adminBot || [];
     const isAdmin = adminList.includes(event.senderID);
 
     // ── Show current prefix (anyone) ────────────────────────────────────────
@@ -44,7 +44,7 @@ module.exports = {
       const thread = await threadsData(event.threadID);
       const data = (thread && thread.data) ? { ...thread.data } : {};
       delete data.prefix;
-      await global.ST.DB.threads.set(event.threadID, data, "data");
+      await global.GoatBot.DB.threads.set(event.threadID, data, "data");
       return message.reply(`✅ Prefix reset — using global: \`${globalPrefix}\``);
     }
 
@@ -56,7 +56,7 @@ module.exports = {
     const thread = await threadsData(event.threadID);
     const data = (thread && thread.data) ? { ...thread.data } : {};
     data.prefix = newPrefix;
-    await global.ST.DB.threads.set(event.threadID, data, "data");
+    await global.GoatBot.DB.threads.set(event.threadID, data, "data");
     return message.reply(
       `✅ Prefix for this ${chatType} set to: \`${newPrefix}\`\n` +
       `Global prefix remains: \`${globalPrefix}\``

@@ -1,6 +1,6 @@
 "use strict";
 
-const fs   = require("fs");
+const fs = require("fs");
 const path = require("path");
 
 const JSON_PATH = path.resolve(__dirname, "../../database/json/globalData.json");
@@ -72,13 +72,13 @@ const mongoController = {
 };
 
 function getController() {
-  const type = (global.ST && global.ST.config && global.ST.config.database && global.ST.config.database.type) || "json";
+  const type = (global.GoatBot && global.GoatBot.config && global.GoatBot.config.database && global.GoatBot.config.database.type) || "json";
   return type === "mongodb" ? mongoController : jsonController;
 }
 
 module.exports = {
-  get:    (key)       => getController().get(key),
-  set:    (key, val)  => getController().set(key, val),
-  delete: (key)       => getController().delete(key),
-  getAll: ()          => getController().getAll(),
+  get: (key) => getController().get(key),
+  set: (key, val) => getController().set(key, val),
+  delete: (key) => getController().delete(key),
+  getAll: () => getController().getAll(),
 };

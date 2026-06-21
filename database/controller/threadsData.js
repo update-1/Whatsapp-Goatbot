@@ -1,6 +1,6 @@
 "use strict";
 
-const fs   = require("fs");
+const fs = require("fs");
 const path = require("path");
 
 const JSON_PATH = path.resolve(__dirname, "../../database/json/threadsData.json");
@@ -186,7 +186,7 @@ const mongoController = {
 };
 
 function getController() {
-  const type = (global.ST && global.ST.config && global.ST.config.database && global.ST.config.database.type) || "json";
+  const type = (global.GoatBot && global.GoatBot.config && global.GoatBot.config.database && global.GoatBot.config.database.type) || "json";
   return type === "mongodb" ? mongoController : jsonController;
 }
 
@@ -201,11 +201,11 @@ async function threadsData(tid) {
 
 module.exports = {
   threadsData,
-  get:              (tid)            => getController().get(tid),
-  set:              (tid, v, f)      => getController().set(tid, v, f),
-  delete:           (tid)            => getController().delete(tid),
-  getAll:           ()               => getController().getAll(),
-  count:            ()               => getController().count(),
-  refreshInfo:      (tid, info)      => getController().refreshInfo(tid, info),
-  incrementMsgCount:(tid, uid)       => getController().incrementMsgCount(tid, uid),
+  get: (tid) => getController().get(tid),
+  set: (tid, v, f) => getController().set(tid, v, f),
+  delete: (tid) => getController().delete(tid),
+  getAll: () => getController().getAll(),
+  count: () => getController().count(),
+  refreshInfo: (tid, info) => getController().refreshInfo(tid, info),
+  incrementMsgCount: (tid, uid) => getController().incrementMsgCount(tid, uid),
 };

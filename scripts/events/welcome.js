@@ -37,7 +37,7 @@ module.exports = {
 
     // If the bot itself was added — greet the group
     if (isBotAdded) {
-      const cfg = global.ST.config;
+      const cfg = global.GoatBot.config;
       const prefix = cfg.prefix || "!";
       const name = cfg.botName || "WCA Bot";
       return api.sendMessage(

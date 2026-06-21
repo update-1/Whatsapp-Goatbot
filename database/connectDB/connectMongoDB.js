@@ -10,7 +10,7 @@ let _mongoose = null;
  * @returns {Promise<object>} mongoose
  */
 async function connectMongoDB() {
-  const uri = (global.ST.config.database && global.ST.config.database.uriMongodb) || "";
+  const uri = (global.GoatBot.config.database && global.GoatBot.config.database.uriMongodb) || "";
   if (!uri) throw new Error("MongoDB URI is empty. Set database.uriMongodb in config.json.");
 
   if (!_mongoose) {

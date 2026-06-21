@@ -14,17 +14,17 @@ module.exports = {
   },
 
   onStart: async ({ api, event, message }) => {
-    const uptime = humanDuration(Date.now() - (global.ST.startTime || Date.now()));
-    const cmds = global.ST.cmds ? global.ST.cmds.size : 0;
-    const events = global.ST.events ? global.ST.events.size : 0;
+    const uptime = humanDuration(Date.now() - (global.GoatBot.startTime || Date.now()));
+    const cmds = global.GoatBot.cmds ? global.GoatBot.cmds.size : 0;
+    const events = global.GoatBot.events ? global.GoatBot.events.size : 0;
     const mem = (process.memoryUsage().rss / 1024 / 1024).toFixed(1);
 
     let users = 0;
     let threads = 0;
     try {
-      if (global.ST.DB) {
-        users = await global.ST.DB.users.count();
-        threads = await global.ST.DB.threads.count();
+      if (global.GoatBot.DB) {
+        users = await global.GoatBot.DB.users.count();
+        threads = await global.GoatBot.DB.threads.count();
       }
     } catch (_) { }
 
@@ -32,7 +32,7 @@ module.exports = {
     const phone = selfID.split(":")[0].split("@")[0] || selfID;
 
     return message.reply(
-      `🤖 *${global.ST.config.botName || "WCA Bot"} Stats*\n\n` +
+      `🤖 *${global.GoatBot.config.botName || "WCA Bot"} Stats*\n\n` +
       `📱 Account: ${phone}\n` +
       `⏱️ Uptime: ${uptime}\n` +
       `💾 Memory: ${mem} MB\n\n` +
@@ -40,7 +40,7 @@ module.exports = {
       `⚡ Events: ${events}\n\n` +
       `👥 Users in DB: ${users}\n` +
       `💬 Threads in DB: ${threads}\n\n` +
-      `🗄️ DB Type: ${(global.ST.config.database && global.ST.config.database.type) || "json"}`
+      `🗄️ DB Type: ${(global.GoatBot.config.database && global.GoatBot.config.database.type) || "json"}`
     );
   }
 };

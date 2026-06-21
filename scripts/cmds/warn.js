@@ -14,7 +14,7 @@ module.exports = {
   },
 
   onStart: async ({ api, event, args, message }) => {
-    if (!global.ST.DB) return message.reply("❌ Database not initialized.");
+    if (!global.GoatBot.DB) return message.reply("❌ Database not initialized.");
 
     const targetUID = getTargetUser(event, args);
     const phone = jidToPhone(targetUID);
@@ -22,12 +22,12 @@ module.exports = {
 
     if (targetUID === event.senderID) return message.reply("❌ You cannot warn yourself.");
 
-    const user = await global.ST.DB.userData(targetUID);
+    const user = await global.GoatBot.DB.userData(targetUID);
     const newCount = (user.warnCount || 0) + 1;
     const reasons = [...(user.warnReason || []), reason];
 
-    await global.ST.DB.users.set(targetUID, newCount, "warnCount");
-    await global.ST.DB.users.set(targetUID, reasons, "warnReason");
+    await global.GoatBot.DB.users.set(targetUID, newCount, "warnCount");
+    await global.GoatBot.DB.users.set(targetUID, reasons, "warnReason");
 
     return message.reply(
       `⚠️ *${phone}* has been warned.\n` +

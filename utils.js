@@ -1,27 +1,27 @@
 "use strict";
 
-const fs      = require("fs");
-const path    = require("path");
-const https   = require("https");
-const http    = require("http");
+const fs = require("fs");
+const path = require("path");
+const https = require("https");
+const http = require("http");
 const { Readable } = require("stream");
 
 // ─── Re-export logger tools ─────────────────────────────────────────────────
-const log      = require("./logger/log.js");
-const spinner  = require("./logger/spinner.js");
-const colors   = require("./logger/colors.js").colors;
-const theme    = require("./logger/colors.js").theme;
-const loading  = require("./logger/loading.js");
+const log = require("./logger/log.js");
+const spinner = require("./logger/spinner.js");
+const colors = require("./logger/colors.js").colors;
+const theme = require("./logger/colors.js").theme;
+const loading = require("./logger/loading.js");
 const logColor = require("./logger/logColor.js");
-const Prism    = require("./logger/prism.js");
+const Prism = require("./logger/prism.js");
 
-module.exports.log      = log;
-module.exports.spinner  = spinner;
-module.exports.colors   = colors;
-module.exports.theme    = theme;
-module.exports.loading  = loading;
+module.exports.log = log;
+module.exports.spinner = spinner;
+module.exports.colors = colors;
+module.exports.theme = theme;
+module.exports.loading = loading;
 module.exports.logColor = logColor;
-module.exports.Prism    = Prism;
+module.exports.Prism = Prism;
 
 // ─── Stream helpers ──────────────────────────────────────────────────────────
 
@@ -90,7 +90,7 @@ function downloadFile(url, dest) {
       res.pipe(file);
       file.on("finish", () => file.close(() => resolve(dest)));
     }).on("error", (err) => {
-      fs.unlink(dest, () => {});
+      fs.unlink(dest, () => { });
       reject(err);
     });
   });
@@ -122,7 +122,7 @@ async function getAttachmentStream({ event, type, url, api } = {}) {
         const buf = await api.downloadMedia(replied.raw || replied);
         const stream = Readable.from(buf);
         return { stream, mimetype: att.mimetype || "application/octet-stream", ext: extFromMime(att.mimetype) };
-      } catch (_) {}
+      } catch (_) { }
     }
   }
   // From current message attachments
@@ -218,8 +218,8 @@ module.exports.getAvatar = getAvatar;
  * @returns {object} message helper
  */
 function buildMessage(api, event) {
-  const threadID  = event.threadID;
-  const rawMsg    = event.raw || null;
+  const threadID = event.threadID;
+  const rawMsg = event.raw || null;
 
   return {
     /**
@@ -229,8 +229,8 @@ function buildMessage(api, event) {
      */
     async reply(msgOrObj, cb) {
       const content = normalizeContent(msgOrObj);
-      const opts    = rawMsg ? { replyToMessage: rawMsg } : {};
-      const sent    = await api.sendMessage(content, threadID, opts).catch((e) => { if (cb) cb(e, null); throw e; });
+      const opts = rawMsg ? { replyToMessage: rawMsg } : {};
+      const sent = await api.sendMessage(content, threadID, opts).catch((e) => { if (cb) cb(e, null); throw e; });
 
       const info = {
         messageID: sent?.key?.id || sent?.id || (Array.isArray(sent) && sent[0]?.key?.id) || null,
@@ -252,8 +252,8 @@ function buildMessage(api, event) {
       if (typeof tid === "function") { cb = tid; tid = null; }
       tid = tid || threadID;
       const content = normalizeContent(msgOrObj);
-      const sent    = await api.sendMessage(content, tid).catch((e) => { if (cb) cb(e, null); throw e; });
-      const info    = { messageID: sent?.key?.id || null, threadID: tid, sent };
+      const sent = await api.sendMessage(content, tid).catch((e) => { if (cb) cb(e, null); throw e; });
+      const info = { messageID: sent?.key?.id || null, threadID: tid, sent };
       if (typeof cb === "function") cb(null, info);
       return info;
     },
@@ -272,7 +272,7 @@ function buildMessage(api, event) {
           key = { remoteJid: threadID, id: msgID, fromMe: false };
         }
         return await api.reactToMessage(threadID, key, emoji);
-      } catch (_) {}
+      } catch (_) { }
     },
 
     /**
@@ -281,10 +281,10 @@ function buildMessage(api, event) {
      */
     async unsend(msgID) {
       try {
-        const id  = msgID || event.messageID;
+        const id = msgID || event.messageID;
         const key = { remoteJid: threadID, id, fromMe: true };
         return await api.deleteMessage(threadID, key, true);
-      } catch (_) {}
+      } catch (_) { }
     },
 
     /**
@@ -295,7 +295,7 @@ function buildMessage(api, event) {
     async edit(msgID, newText) {
       try {
         return await api.editMessage(threadID, msgID, newText);
-      } catch (_) {}
+      } catch (_) { }
     },
 
     /**
@@ -305,7 +305,7 @@ function buildMessage(api, event) {
     async typing(tid) {
       try {
         return await api.sendTypingIndicator(tid || threadID, 3000);
-      } catch (_) {}
+      } catch (_) { }
     },
   };
 }
@@ -369,17 +369,17 @@ async function resolveUserDisplayName(api, uid, userData) {
     bare ? bare + "@lid" : "",
   ].filter(Boolean)));
 
-  const getUser = userData || (global.ST && global.ST.DB && global.ST.DB.userData);
+  const getUser = userData || (global.GoatBot && global.GoatBot.DB && global.GoatBot.DB.userData);
   if (typeof getUser === "function") {
     for (const key of candidates) {
       try {
         const u = await getUser(key);
         if (u && u.name && u.name !== "Unknown") return u.name;
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 
-  const sock = (api && api.sock) || (global.ST && global.ST.api && global.ST.api.sock);
+  const sock = (api && api.sock) || (global.GoatBot && global.GoatBot.api && global.GoatBot.api.sock);
   const contacts = (sock && (sock.contacts || (sock.store && sock.store.contacts))) || {};
   for (const key of candidates) {
     const name = pickContactName(contacts[key]);

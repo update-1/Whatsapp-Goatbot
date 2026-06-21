@@ -44,35 +44,34 @@ function readPackageJson(filePath) {
 
 async function collectInfo(api) {
   const pkg = readPackageJson(path.resolve(process.cwd(), "package.json"));
-  const wcaPkg = readPackageJson(path.resolve(process.cwd(), "wca", "package.json"));
   const mem = process.memoryUsage();
   const totalMem = os.totalmem();
   const freeMem = os.freemem();
   const usedSystemMem = totalMem - freeMem;
   const cpu = os.cpus()[0]?.model || "unknown";
   const uptime = global.humanDuration
-    ? global.humanDuration(Date.now() - (global.ST.startTime || Date.now()))
+    ? global.humanDuration(Date.now() - (global.GoatBot.startTime || Date.now()))
     : `${Math.floor(process.uptime())}s`;
 
   let users = 0;
   let threads = 0;
   try {
-    if (global.ST.DB) {
-      users = await global.ST.DB.users.count();
-      threads = await global.ST.DB.threads.count();
+    if (global.GoatBot.DB) {
+      users = await global.GoatBot.DB.users.count();
+      threads = await global.GoatBot.DB.threads.count();
     }
   } catch (_) { }
 
   const selfID = api.getCurrentUserID ? api.getCurrentUserID() : (api.ctx && api.ctx.selfID) || "";
   const phone = selfID.split(":")[0].split("@")[0] || selfID || "unknown";
-  const express = global.ST.config.express || {};
-  const listen = global.ST.config.listen || {};
+  const express = global.GoatBot.config.express || {};
+  const listen = global.GoatBot.config.listen || {};
 
   return {
-    botName: global.ST.config.botName || "WCA Bot",
+    botName: global.GoatBot.config.botName || "Baileys Bot",
     project: `${pkg.name || "unknown"} v${pkg.version || "0.0.0"}`,
     account: phone,
-    prefix: global.ST.config.prefix || "!",
+    prefix: global.GoatBot.config.prefix || "!",
     uptime,
     node: process.version,
     platform: `${os.platform()} ${os.arch()}`,
@@ -83,17 +82,17 @@ async function collectInfo(api) {
     heapTotal: mem.heapTotal,
     usedSystemMem,
     totalMem,
-    commands: global.ST.cmds ? global.ST.cmds.size : 0,
-    events: global.ST.events ? global.ST.events.size : 0,
-    onReply: global.ST.onReply ? global.ST.onReply.size : 0,
-    onReaction: global.ST.onReaction ? global.ST.onReaction.size : 0,
-    dbType: (global.ST.config.database && global.ST.config.database.type) || "json",
+    commands: global.GoatBot.cmds ? global.GoatBot.cmds.size : 0,
+    events: global.GoatBot.events ? global.GoatBot.events.size : 0,
+    onReply: global.GoatBot.onReply ? global.GoatBot.onReply.size : 0,
+    onReaction: global.GoatBot.onReaction ? global.GoatBot.onReaction.size : 0,
+    dbType: (global.GoatBot.config.database && global.GoatBot.config.database.type) || "json",
     users,
     threads,
     express: express.enable ? `on:${express.port || 3000}` : "off",
     listenEvents: listen.listenEvents !== false ? "on" : "off",
     selfListen: listen.selfListen ? "on" : "off",
-    wca: wcaPkg.version || pkg.dependencies?.["@sheikhtamim/wca"] || "local",
+    baileys: pkg.dependencies?.["@whiskeysockets/baileys"] || "local",
     deps: Object.keys(pkg.dependencies || {}).length,
   };
 }
@@ -185,7 +184,6 @@ function drawFrame(ctx, info, frame) {
     ["Node", info.node],
     ["Platform", info.platform],
     ["CPU", info.cpu],
-    ["WCA", info.wca],
     ["Baileys", info.baileys],
   ], 466, 265, 390, 190);
 
@@ -196,10 +194,10 @@ function drawFrame(ctx, info, frame) {
 async function createSystemImage(info) {
   const canvas = createCanvas(WIDTH, HEIGHT);
   const ctx = canvas.getContext("2d");
-  
+
   // Frame 10 has the progress bars fully animated to their target value
-  drawFrame(ctx, info, 10); 
-  
+  drawFrame(ctx, info, 10);
+
   return canvas.toBuffer("image/png");
 }
 

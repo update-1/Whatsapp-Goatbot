@@ -1,18 +1,18 @@
 "use strict";
 
-const https  = require("https");
-const http   = require("http");
+const https = require("https");
+const http = require("http");
 
 let log = null;
 function getLog() {
   if (log) return log;
-  try { log = require("../logger/log.js"); } catch (_) {}
+  try { log = require("../logger/log.js"); } catch (_) { }
   if (!log) log = { info: console.log, err: console.error, warn: console.warn };
   return log;
 }
 
 let _interval = null;
-let _status   = "ok";
+let _status = "ok";
 
 function pingUrl(url) {
   return new Promise((resolve, reject) => {
@@ -32,14 +32,14 @@ function pingUrl(url) {
 
 /**
  * Start the auto-uptime ping loop.
- * Reads config from global.ST.config.autoUptime
+ * Reads config from global.GoatBot.config.autoUptime
  */
 function startAutoUptime() {
-  const cfg      = (global.ST && global.ST.config && global.ST.config.autoUptime) || {};
+  const cfg = (global.GoatBot && global.GoatBot.config && global.GoatBot.config.autoUptime) || {};
   if (!cfg.enable) return;
 
-  const expressCfg = (global.ST && global.ST.config && global.ST.config.express) || {};
-  const port       = expressCfg.port || 3000;
+  const expressCfg = (global.GoatBot && global.GoatBot.config && global.GoatBot.config.express) || {};
+  const port = expressCfg.port || 3000;
 
   let myUrl = cfg.url || `http://localhost:${port}`;
   if (!myUrl.endsWith("/uptime")) myUrl = myUrl.replace(/\/$/, "") + "/uptime";

@@ -14,7 +14,7 @@ module.exports = {
   },
 
   onStart: async ({ api, event, args, message }) => {
-    if (!global.ST.DB) return message.reply("❌ Database not initialized.");
+    if (!global.GoatBot.DB) return message.reply("❌ Database not initialized.");
 
     const targetUID = getTargetUser(event, args);
     const phone = jidToPhone(targetUID);
@@ -22,11 +22,11 @@ module.exports = {
 
     if (targetUID === event.senderID) return message.reply("❌ You cannot ban yourself.");
 
-    const adminList = global.ST.config.adminBot || [];
+    const adminList = global.GoatBot.config.adminBot || [];
     if (adminList.includes(targetUID)) return message.reply("❌ You cannot ban a bot admin.");
 
-    await global.ST.DB.users.set(targetUID, true, "isBan");
-    await global.ST.DB.users.set(targetUID, reason, "banReason");
+    await global.GoatBot.DB.users.set(targetUID, true, "isBan");
+    await global.GoatBot.DB.users.set(targetUID, reason, "banReason");
 
     return message.reply(`✅ *${phone}* has been banned.\n📋 Reason: ${reason}`);
   }

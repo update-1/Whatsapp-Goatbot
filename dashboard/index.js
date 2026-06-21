@@ -1,1110 +1,420 @@
-// Frontend dashboard controller logic for Goat AI
+"use strict";
 
-let socket = null;
-let currentToken = localStorage.getItem("secret_token") || "1234";
-let activeTab = "overview";
-let linkerMode = "pair";
-let globalConfig = {};
+const os = require("os");
+const fs = require("fs");
+const path = require("path");
+const { exec } = require("child_process");
+const express = require("express");
 
-// Cache references to DOM elements
-const loginContainer = document.getElementById("login-container");
-const dashboardContainer = document.getElementById("dashboard-container");
-const adminKeyInput = document.getElementById("admin-key-input");
-const loginSubmitBtn = document.getElementById("login-submit-btn");
-const loginErrorMsg = document.getElementById("login-error-msg");
 
-const navTabs = document.querySelectorAll(".nav-tab");
-const tabPanes = document.querySelectorAll(".tab-pane");
 
-const btnSessionModal = document.getElementById("btn-session-modal");
-const btnRestartBot = document.getElementById("btn-restart-bot");
-const btnLogout = document.getElementById("btn-logout");
-const btnTerminate = document.getElementById("btn-terminate");
-const btnFlush = document.getElementById("btn-flush");
 
-const sessionModal = document.getElementById("session-modal");
-const btnCloseSessionModal = document.getElementById("btn-close-session-modal");
-const btnCancelSession = document.getElementById("btn-cancel-session");
-const btnSubmitSession = document.getElementById("btn-submit-session");
-const sessionIdTextarea = document.getElementById("session-id-textarea");
 
-// Code Editor references
-const editorModal = document.getElementById("editor-modal");
-const btnCloseEditorModal = document.getElementById("btn-close-editor-modal");
-const btnCancelEditor = document.getElementById("btn-cancel-editor");
-const btnSaveEditor = document.getElementById("btn-save-editor");
-const editorCmdName = document.getElementById("editor-cmd-name");
-const editorFileInfo = document.getElementById("editor-file-info");
-let editingCmdName = "";
-
-// Initialize Ace Editor
-let codeEditor = null;
-function initAceEditor() {
-  if (codeEditor) return;
-  ace.config.set("basePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/");
-  codeEditor = ace.edit("editor-code-container");
-  codeEditor.setTheme("ace/theme/dracula");
-  codeEditor.session.setMode("ace/mode/javascript");
-  codeEditor.setShowPrintMargin(false);
-  codeEditor.session.setUseWorker(false);
-}
-
-// Uptime Formatter
-function formatUptime(seconds) {
-  if (isNaN(seconds) || seconds < 0) return "0s";
-  const d = Math.floor(seconds / (3600 * 24));
-  const h = Math.floor((seconds % (3600 * 24)) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-
-  const parts = [];
-  if (d > 0) parts.push(`${d}d`);
-  if (h > 0) parts.push(`${h}h`);
-  if (m > 0) parts.push(`${m}m`);
-  parts.push(`${s}s`);
-  return parts.join(" ");
-}
-
-// Memory/Storage size formatter
-function formatSize(bytes, decimals = 2) {
-  if (!bytes || bytes === 0) return '0 B';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
-
-// ANSI Escape Code Parser to CSS HTML
-function ansiToHtml(text) {
-  let html = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-
-  const ansiMap = {
-    "\x1b[1m": '<span style="font-weight: bold;">',
-    "\x1b[2m": '<span style="opacity: 0.6;">',
-    "\x1b[3m": '<span style="font-style: italic;">',
-    "\x1b[4m": '<span style="text-decoration: underline;">',
-
-    "\x1b[30m": '<span style="color: #2c3e50;">',
-    "\x1b[31m": '<span style="color: #ff5c7a; font-weight: 500;">',
-    "\x1b[32m": '<span style="color: #22d39a; font-weight: 500;">',
-    "\x1b[33m": '<span style="color: #ffb648; font-weight: 500;">',
-    "\x1b[34m": '<span style="color: #74b9ff; font-weight: 500;">',
-    "\x1b[35m": '<span style="color: #fd79a8; font-weight: 500;">',
-    "\x1b[36m": '<span style="color: #00cec9; font-weight: 500;">',
-    "\x1b[37m": '<span style="color: #dfe6e9;">',
-    "\x1b[90m": '<span style="color: #636e72;">',
-
-    "\x1b[91m": '<span style="color: #ff7675; font-weight: 500;">',
-    "\x1b[92m": '<span style="color: #55efc4; font-weight: 500;">',
-    "\x1b[93m": '<span style="color: #ffeaa7; font-weight: 500;">',
-    "\x1b[94m": '<span style="color: #74b9ff; font-weight: 500;">',
-    "\x1b[95m": '<span style="color: #a29bfe; font-weight: 500;">',
-    "\x1b[96m": '<span style="color: #81ecec; font-weight: 500;">',
-    "\x1b[97m": '<span style="color: #ffffff;">',
-
-    "\x1b[40m": '<span style="background-color: #1e202d;">',
-    "\x1b[41m": '<span style="background-color: #ff5c7a; color: #000; padding: 1px 4px; border-radius: 3px;">',
-    "\x1b[42m": '<span style="background-color: #22d39a; color: #000; padding: 1px 4px; border-radius: 3px;">',
-    "\x1b[43m": '<span style="background-color: #ffb648; color: #000; padding: 1px 4px; border-radius: 3px;">',
-    "\x1b[44m": '<span style="background-color: #74b9ff; color: #000; padding: 1px 4px; border-radius: 3px;">',
-  };
-
-  html = html.replace(/\x1b\[38;2;(\d+);(\d+);(\d+)m/g, '<span style="color: rgb($1,$2,$3); font-weight: 500;">');
-  html = html.replace(/\x1b\[48;2;(\d+);(\d+);(\d+)m/g, '<span style="background-color: rgb($1,$2,$3); color: #000; padding: 2px 4px; border-radius: 4px;">');
-
-  for (const key in ansiMap) {
-    html = html.split(key).join(ansiMap[key]);
+// System stats helpers
+function cpuAverage() {
+  let totalIdle = 0, totalTick = 0;
+  const cpus = os.cpus();
+  if (!cpus) return { idle: 0, total: 0 };
+  for (let i = 0, len = cpus.length; i < len; i++) {
+    const cpu = cpus[i];
+    for (const type in cpu.times) {
+      totalTick += cpu.times[type];
+    }
+    totalIdle += cpu.times.idle;
   }
-
-  html = html.replace(/\x1b\[(39|49|22|23|24|29|0)m/g, '</span>');
-  html = html.replace(/\x1b\[[0-9;]*m/g, '');
-
-  return html;
+  return { idle: totalIdle / cpus.length, total: totalTick / cpus.length };
 }
 
-// Toast notification helper
-function showToast(message, type = "success") {
-  const container = document.getElementById("toast-container");
-  const toast = document.createElement("div");
-  toast.className = `toast toast-${type}`;
-
-  let icon = "fa-circle-check";
-  if (type === "danger") icon = "fa-circle-xmark";
-  if (type === "warning") icon = "fa-triangle-exclamation";
-
-  toast.innerHTML = `
-    <i class="fa-solid ${icon} toast-icon"></i>
-    <div class="toast-message">${message}</div>
-  `;
-
-  container.appendChild(toast);
-
-  // slide out and delete
-  setTimeout(() => {
-    toast.style.transform = "translateX(120%)";
-    toast.style.transition = "transform 0.4s ease";
-    setTimeout(() => toast.remove(), 400);
-  }, 4000);
-}
-
-// API helper request wrapper
-async function apiRequest(endpoint, method = "GET", data = null) {
-  const headers = {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${currentToken}`
-  };
-
-  const options = { method, headers };
-  if (data) options.body = JSON.stringify(data);
-
-  try {
-    const res = await fetch(endpoint, options);
-    if (res.status === 401) {
-      showToast("Access token invalid. Locking dashboard...", "danger");
-      handleLogout();
-      throw new Error("Unauthorized");
-    }
-    const result = await res.json();
-    if (result.status === "error") {
-      throw new Error(result.message);
-    }
-    return result;
-  } catch (err) {
-    if (err.message !== "Unauthorized") {
-      showToast(err.message || "Failed API request", "danger");
-    }
-    throw err;
-  }
-}
-
-// Handle login validation and credentials setup
-async function handleLoginSubmit(event) {
-  if (event) event.preventDefault();
-  const tokenInput = adminKeyInput.value.trim();
-  if (!tokenInput) {
-    loginErrorMsg.innerText = "Please enter a key.";
-    return;
-  }
-
-  loginSubmitBtn.disabled = true;
-  loginSubmitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Checking Key...';
-
-  try {
-    // Perform authentication call checking token validity
-    const res = await fetch(`/api/metrics?token=${encodeURIComponent(tokenInput)}`);
-    if (res.status === 200) {
-      currentToken = tokenInput;
-      localStorage.setItem("secret_token", currentToken);
-
-      loginErrorMsg.innerText = "";
-      loginContainer.classList.add("hidden");
-      dashboardContainer.classList.remove("hidden");
-
-      showToast("Console unlocked successfully!");
-      initSocket();
-      loadActiveTab();
-    } else {
-      loginErrorMsg.innerText = "Invalid secret key. Try again.";
-    }
-  } catch (err) {
-    loginErrorMsg.innerText = "Connection error. Is the server running?";
-  } finally {
-    loginSubmitBtn.disabled = false;
-    loginSubmitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Unlock Dashboard';
-  }
-}
-
-// Log out / Lock screen
-function handleLogout() {
-  localStorage.removeItem("secret_token");
-  currentToken = "";
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-  dashboardContainer.classList.add("hidden");
-  loginContainer.classList.remove("hidden");
-  adminKeyInput.value = "";
-  loginErrorMsg.innerText = "";
-}
-
-// Socket IO setup
-function initSocket() {
-  if (socket) return;
-
-  socket = io({
-    auth: {
-      verifyToken: currentToken
-    }
-  });
-
-  const statusBadge = document.getElementById("bot-status-badge");
-
-  socket.on("connect", () => {
-    statusBadge.className = "status-badge live";
-    statusBadge.innerHTML = '<span class="pulse-dot"></span> LIVE';
-  });
-
-  socket.on("disconnect", () => {
-    statusBadge.className = "status-badge disconnected";
-    statusBadge.innerHTML = '● DISCONNECTED';
-  });
-
-  socket.on("auth_error", (data) => {
-    showToast(data.message || "Socket auth failed", "danger");
-    handleLogout();
-  });
-
-  // Handle incoming logs stream
-  const logTerminal = document.getElementById("log-terminal");
-  const scrollCheckbox = document.getElementById("logs-autoscroll");
-
-  socket.on("console_log", (message) => {
-    appendLog(message);
-  });
-
-  socket.on("log_history", (history) => {
-    logTerminal.innerHTML = "";
-    if (history && history.length > 0) {
-      history.forEach(log => appendLog(log));
-    } else {
-      logTerminal.innerHTML = '<div class="log-line log-info">No previous logs cached. Waiting...</div>';
-    }
-  });
-
-  function appendLog(message) {
-    const isScroll = scrollCheckbox.checked;
-    const div = document.createElement("div");
-    div.className = "log-line";
-    div.innerHTML = ansiToHtml(message);
-    logTerminal.appendChild(div);
-
-    if (isScroll) {
-      logTerminal.scrollTop = logTerminal.scrollHeight;
-    }
-
-    // cap local log lines count in terminal memory
-    if (logTerminal.children.length > 400) {
-      logTerminal.removeChild(logTerminal.firstChild);
-    }
-  }
-
-  // Handle metric updates
-  socket.on("uptime", (data) => {
-    // If the system metrics tab is active, we can update metrics
-    if (activeTab === "overview") {
-      updateOverviewMetrics(data);
-    }
+function getCpuUsage() {
+  return new Promise((resolve) => {
+    const startMeasure = cpuAverage();
+    setTimeout(() => {
+      const endMeasure = cpuAverage();
+      const idleDifference = endMeasure.idle - startMeasure.idle;
+      const totalDifference = endMeasure.total - startMeasure.total;
+      if (totalDifference === 0) return resolve(0);
+      const percentageCPU = 100 - ~~(100 * idleDifference / totalDifference);
+      resolve(percentageCPU);
+    }, 100);
   });
 }
 
-let localUptimeSeconds = 0;
-let localUptimeInterval = null;
-
-function startLocalUptimeTicker(initialSeconds) {
-  localUptimeSeconds = initialSeconds;
-  document.getElementById("val-uptime").innerText = formatUptime(localUptimeSeconds);
-  
-  if (localUptimeInterval) clearInterval(localUptimeInterval);
-  localUptimeInterval = setInterval(() => {
-    localUptimeSeconds++;
-    document.getElementById("val-uptime").innerText = formatUptime(localUptimeSeconds);
-  }, 1000);
-}
-
-// Metrics loader (overview)
-async function fetchOverviewStats() {
-  try {
-    const stats = await apiRequest("/api/metrics");
-
-    startLocalUptimeTicker(stats.uptime);
-    document.getElementById("val-ram").innerText = `${formatSize(stats.memory.heapUsed)} / ${formatSize(stats.memory.heapTotal)}`;
-    document.getElementById("val-cpu").innerText = `${stats.cpu}%`;
-    document.getElementById("val-version").innerText = stats.version;
-    document.getElementById("val-node").innerText = stats.nodeVersion;
-
-    const storagePercent = ((stats.storage.total - stats.storage.free) / stats.storage.total * 100).toFixed(1);
-    document.getElementById("val-storage").innerText = `${formatSize(stats.storage.total - stats.storage.free, 1)} / ${formatSize(stats.storage.total, 1)} (${storagePercent}%)`;
-
-    document.getElementById("val-os").innerText = stats.os;
-    document.getElementById("val-dependencies").innerText = stats.dependencies;
-    document.getElementById("val-active-threads").innerText = stats.activeThreads;
-    document.getElementById("val-total-users").innerText = stats.totalUsers;
-    document.getElementById("val-members").innerText = stats.members;
-    document.getElementById("val-commands").innerText = stats.commands;
-  } catch (err) { }
-}
-
-function updateOverviewMetrics(data) {
-  // Sync local counter with authoritative server uptime
-  if (data.uptime !== undefined) {
-    localUptimeSeconds = data.uptime;
-    document.getElementById("val-uptime").innerText = formatUptime(localUptimeSeconds);
-  }
-  if (data.memory) {
-    if (data.memory.heapUsed && data.memory.heapTotal) {
-      document.getElementById("val-ram").innerText = `${formatSize(data.memory.heapUsed)} / ${formatSize(data.memory.heapTotal)}`;
-    } else if (typeof data.memory === "number") {
-      document.getElementById("val-ram").innerText = formatSize(data.memory);
-    }
-  }
-  if (data.cpu !== undefined) {
-    document.getElementById("val-cpu").innerText = `${data.cpu}%`;
-  }
-}
-
-// Tab panes controller
-function handleTabClick(event) {
-  const btn = event.currentTarget;
-  const targetTab = btn.getAttribute("data-tab");
-
-  navTabs.forEach(t => t.classList.remove("active"));
-  tabPanes.forEach(p => p.classList.remove("active"));
-
-  btn.classList.add("active");
-  document.getElementById(`tab-${targetTab}`).classList.add("active");
-
-  activeTab = targetTab;
-  loadActiveTab();
-}
-
-function loadActiveTab() {
-  if (activeTab === "overview") {
-    fetchOverviewStats();
-  } else if (activeTab === "threads") {
-    fetchThreadsList();
-  } else if (activeTab === "users") {
-    fetchUsersList();
-  } else if (activeTab === "commands") {
-    fetchCommandsList();
-  } else if (activeTab === "config") {
-    fetchConfig();
-  } else if (activeTab === "linker") {
-    if (linkerMode === "qr") {
-      generateLinkerQRCode();
-    }
-  }
-}
-
-// 1. Fetch group threads from API
-let allThreads = [];
-async function fetchThreadsList() {
-  const tbody = document.querySelector("#threads-table tbody");
-  tbody.innerHTML = '<tr><td colspan="5" class="text-center"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading group threads...</td></tr>';
-
-  try {
-    allThreads = await apiRequest("/api/threads");
-    renderThreads(allThreads);
-  } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load threads</td></tr>';
-  }
-}
-
-function renderThreads(list) {
-  const tbody = document.querySelector("#threads-table tbody");
-  tbody.innerHTML = "";
-
-  if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center">No active group threads found in database.</td></tr>';
-    return;
-  }
-
-  list.forEach(thread => {
-    const tr = document.createElement("tr");
-    const tid = thread.tid || "";
-    const name = thread.name || "Unknown Group";
-    const totalMembers = thread.totalMember || thread.allMembers?.length || 0;
-    const approval = thread.approvalMode
-      ? '<span class="badge badge-success">Enabled</span>'
-      : '<span class="badge badge-secondary">Disabled</span>';
-    const date = thread.createdAt ? new Date(thread.createdAt).toLocaleDateString() : "-";
-
-    tr.innerHTML = `
-      <td><code>${tid}</code></td>
-      <td><strong>${name}</strong></td>
-      <td>${totalMembers}</td>
-      <td>${approval}</td>
-      <td>${date}</td>
-    `;
-    tbody.appendChild(tr);
+function getStorageInfo() {
+  return new Promise((resolve) => {
+    const drive = path.resolve(process.cwd()).substring(0, 2);
+    const cmd = `powershell -Command "Get-CimInstance Win32_LogicalDisk | Where-Object {$_.DeviceID -eq '${drive}'} | Select-Object Size, FreeSpace | ConvertTo-Json"`;
+    exec(cmd, (err, stdout) => {
+      if (err) {
+        return resolve({ size: 500 * 1024 * 1024 * 1024, free: 250 * 1024 * 1024 * 1024 });
+      }
+      try {
+        const data = JSON.parse(stdout.trim());
+        const item = Array.isArray(data) ? data[0] : data;
+        resolve({
+          size: Number(item.Size || item.size || 500 * 1024 * 1024 * 1024),
+          free: Number(item.FreeSpace || item.freespace || 250 * 1024 * 1024 * 1024)
+        });
+      } catch (_) {
+        resolve({ size: 500 * 1024 * 1024 * 1024, free: 250 * 1024 * 1024 * 1024 });
+      }
+    });
   });
 }
 
-// 2. Fetch users from API
-let allUsers = [];
-async function fetchUsersList() {
-  const tbody = document.querySelector("#users-table tbody");
-  tbody.innerHTML = '<tr><td colspan="6" class="text-center"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading users...</td></tr>';
+let cachedCpu = 0;
+let cachedStorage = { size: 500 * 1024 * 1024 * 1024, free: 250 * 1024 * 1024 * 1024 };
+let cachedDb = { threads: 0, users: 0, members: 0 };
 
-  try {
-    allUsers = await apiRequest("/api/users");
-    renderUsers(allUsers);
-  } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Failed to load users</td></tr>';
-  }
-}
+async function updateDbMetrics() {
+  if (global.GoatBot && global.GoatBot.DB) {
+    let threads = 0;
+    let users = 0;
+    let members = 0;
 
-function renderUsers(list) {
-  const tbody = document.querySelector("#users-table tbody");
-  tbody.innerHTML = "";
-
-  if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No users recorded in database.</td></tr>';
-    return;
-  }
-
-  list.forEach(user => {
-    const tr = document.createElement("tr");
-    const uid = user.uid || "";
-    const name = user.name || "Unknown User";
-    const money = user.money || 0;
-    const exp = user.exp || 0;
-    const status = user.isBan
-      ? `<span class="badge badge-danger" title="${user.banReason || 'Banned'}">Banned</span>`
-      : '<span class="badge badge-success">Active</span>';
-
-    const actionBtn = user.isBan
-      ? `<button class="btn btn-sm btn-secondary" onclick="toggleUserBan('${uid}', false)">Unban</button>`
-      : `<button class="btn btn-sm btn-outline-danger" onclick="toggleUserBan('${uid}', true)">Ban</button>`;
-
-    tr.innerHTML = `
-      <td><code>${uid}</code></td>
-      <td><strong>${name}</strong></td>
-      <td>${money}</td>
-      <td>${exp}</td>
-      <td>${status}</td>
-      <td>${actionBtn}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-async function toggleUserBan(uid, isBan) {
-  let reason = "";
-  if (isBan) {
-    reason = prompt("Enter ban reason:", "Violating bot rules");
-    if (reason === null) return; // cancelled
-  } else {
-    if (!confirm("Are you sure you want to unban this user?")) return;
-  }
-
-  try {
-    const res = await apiRequest("/api/users/ban", "POST", { uid, isBan, reason });
-    showToast(res.message);
-    fetchUsersList(); // reload table
-  } catch (err) { }
-}
-
-// 3. Fetch bot commands list
-let allCommands = [];
-async function fetchCommandsList() {
-  const container = document.getElementById("commands-grid-container");
-  container.innerHTML = '<div class="text-center w-100 py-5"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading commands...</div>';
-
-  try {
-    allCommands = await apiRequest("/api/commands");
-    renderCommands(allCommands);
-  } catch (err) {
-    container.innerHTML = '<div class="text-center w-100 py-5 text-danger">Failed to load commands</div>';
-  }
-}
-
-function renderCommands(list) {
-  const container = document.getElementById("commands-grid-container");
-  container.innerHTML = "";
-
-  if (list.length === 0) {
-    container.innerHTML = '<div class="text-center w-100 py-5">No commands loaded.</div>';
-    return;
-  }
-
-  list.forEach(cmd => {
-    const card = document.createElement("div");
-    card.className = "command-card";
-    const name = cmd.name;
-    const category = cmd.config.category || "General";
-    const desc = cmd.config.shortDescription || cmd.config.longDescription || "No description provided.";
-    const aliases = (cmd.config.aliases || []).join(", ") || "None";
-    const role = cmd.config.role === 2 ? "Admin Only" : cmd.config.role === 1 ? "Moderator" : "User";
-
-    card.innerHTML = `
-      <div>
-        <div class="command-card-header">
-          <span class="cmd-name">${name}</span>
-          <span class="cmd-cat">${category}</span>
-        </div>
-        <p class="cmd-desc">${desc}</p>
-      </div>
-      <div class="command-card-footer">
-        <div><strong>Role:</strong> ${role}</div>
-        <div style="margin-top: 4px; margin-bottom: 8px;"><strong>Aliases:</strong> <span class="cmd-alias">${aliases}</span></div>
-        <button class="btn btn-sm btn-secondary btn-block" style="font-size: 0.8rem; height: 32px;" onclick="openEditorModal('${name}')"><i class="fa-solid fa-code"></i> Edit Script</button>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-// Command Editor modal handlers
-async function openEditorModal(cmdName) {
-  initAceEditor();
-  editingCmdName = cmdName;
-  editorCmdName.innerText = cmdName;
-  editorFileInfo.innerText = "Loading file path...";
-  codeEditor.setValue("Loading code...", -1);
-  editorModal.classList.remove("hidden");
-  codeEditor.resize();
-  
-  try {
-    const res = await apiRequest(`/api/commands/code?name=${encodeURIComponent(cmdName)}`);
-    codeEditor.setValue(res.code, -1);
-    codeEditor.session.getUndoManager().reset();
-    editorFileInfo.innerText = `File: scripts/cmds/${res.filename}`;
-  } catch (err) {
-    codeEditor.setValue(`// Failed to load code: ${err.message}`, -1);
-    editorFileInfo.innerText = "Error loading file";
-  }
-}
-
-function closeEditorModal() {
-  editorModal.classList.add("hidden");
-}
-
-async function submitCodeEdit() {
-  const code = codeEditor.getValue();
-  
-  btnSaveEditor.disabled = true;
-  btnSaveEditor.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
-  
-  try {
-    const res = await apiRequest("/api/commands/code", "POST", { name: editingCmdName, code });
-    if (res.warning) {
-      showToast(`Saved, but reload failed: ${res.warning}`, "warning");
-    } else {
-      showToast(res.message);
-    }
-    closeEditorModal();
-    fetchCommandsList();
-  } catch (err) {
-    showToast(err.message || "Failed to save script", "danger");
-  } finally {
-    btnSaveEditor.disabled = false;
-    btnSaveEditor.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save & Hot-Reload';
-  }
-}
-
-// 4. Fetch and render config form
-async function fetchConfig() {
-  const form = document.getElementById("config-form");
-  form.innerHTML = '<div class="text-center w-100 py-5"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading configuration...</div>';
-
-  try {
-    globalConfig = await apiRequest("/api/config");
-    renderConfigForm(globalConfig);
-  } catch (err) {
-    form.innerHTML = '<div class="text-center w-100 py-5 text-danger">Failed to load configuration</div>';
-  }
-}
-
-function renderConfigForm(cfg) {
-  const form = document.getElementById("config-form");
-  form.innerHTML = "";
-
-  // Section: Core Settings
-  addSectionHeader(form, "Bot Profile Settings");
-  addInputField(form, "botName", "Bot Name", cfg.botName || "", "Name shown for your bot inside logs and status cards");
-  addInputField(form, "prefix", "Command Prefix", cfg.prefix || "!", "Default prefix for launching commands");
-  addInputField(form, "phoneNumber", "Bot Phone Number", cfg.phoneNumber || "", "Country code + digits connected to the bot");
-
-  addSelectField(form, "loginMode", "Login Method", cfg.loginMode || "pair", [
-    { value: "pair", label: "Pairing Code" },
-    { value: "qr", label: "QR Code scanner" }
-  ], "Method used when creating a new session from scratch");
-
-  // Section: Admin & Security
-  addSectionHeader(form, "Access Controls & System Config");
-  addInputField(form, "express.port", "Web Server Port", cfg.express?.port || 3000, "Port running this dashboard page (Requires restart if changed)");
-  addInputField(form, "express.secretToken", "Admin Access Key", cfg.express?.secretToken || "Romeo", "Secret token used to unlock this dashboard screen");
-
-  addInputField(form, "adminBot", "Admins UIDs (Comma separated)", (cfg.adminBot || []).join(", "), "Target numbers with absolute owner control");
-
-  // Section: Database config
-  addSectionHeader(form, "Database & Storage");
-  addSelectField(form, "database.type", "Database Type", cfg.database?.type || "json", [
-    { value: "json", label: "JSON Local Files" },
-    { value: "mongodb", label: "MongoDB Remote Instance" }
-  ], "Where logs, commands and statistics persist");
-  addInputField(form, "database.uriMongodb", "MongoDB Connection URI", cfg.database?.uriMongodb || "", "Leave empty if Database Type is set to JSON");
-
-  // Section: Auto Uptime config
-  addSectionHeader(form, "Auto Uptime Ping");
-  addSelectField(form, "autoUptime.enable", "Uptime Service Status", cfg.autoUptime?.enable === true ? "true" : "false", [
-    { value: "true", label: "Enabled" },
-    { value: "false", label: "Disabled" }
-  ], "Keeps bot host server active via ping loops");
-  addInputField(form, "autoUptime.url", "Auto Uptime Target URL", cfg.autoUptime?.url || "", "Endpoint target containing /uptime ping");
-  addInputField(form, "autoUptime.timeInterval", "Interval Time (Seconds)", cfg.autoUptime?.timeInterval || 180, "Amount of time delay in-between checks");
-
-  // Section: Listen Settings
-  addSectionHeader(form, "WhatsApp Event Listener Options");
-  addSelectField(form, "listen.selfListen", "Listen to Self Messages", cfg.listen?.selfListen === true ? "true" : "false", [
-    { value: "true", label: "Enabled (Triggers on own messages)" },
-    { value: "false", label: "Disabled (Recommended)" }
-  ], "Determines whether the bot processes messages sent by its own number");
-  addSelectField(form, "listen.listenEvents", "Listen to System Events", cfg.listen?.listenEvents === true ? "true" : "false", [
-    { value: "true", label: "Enabled" },
-    { value: "false", label: "Disabled" }
-  ], "Triggers handlers on user joins, group name changes, kicks, etc.");
-  addSelectField(form, "listen.autoMarkDelivery", "Auto Mark Read", cfg.listen?.autoMarkDelivery === true ? "true" : "false", [
-    { value: "true", label: "Enabled (Read receipt sent immediately)" },
-    { value: "false", label: "Disabled" }
-  ], "Automatically sends double blue-ticks to incoming messages");
-  addSelectField(form, "listen.autoReconnect", "Auto Reconnect", cfg.listen?.autoReconnect === true ? "true" : "false", [
-    { value: "true", label: "Enabled" },
-    { value: "false", label: "Disabled" }
-  ], "Attempts connection restore if socket disconnects");
-  addSelectField(form, "listen.listenRawMsg", "Listen Raw Message", cfg.listen?.listenRawMsg === true ? "true" : "false", [
-    { value: "true", label: "Enabled" },
-    { value: "false", label: "Disabled" }
-  ], "Sends all incoming messages directly to standard event handler queues");
-
-  // Section: Feature Box Settings
-  addSectionHeader(form, "Feature Box (Access & Moderation)");
-  addSelectField(form, "featureBox.whitelistMode", "User Whitelist Mode", cfg.featureBox?.whitelistMode === true ? "true" : "false", [
-    { value: "true", label: "Enabled" },
-    { value: "false", label: "Disabled" }
-  ], "Restricts bot usage strictly to user IDs in the list");
-  addInputField(form, "featureBox.whitelistUIDs", "Whitelisted User UIDs (Comma separated)", (cfg.featureBox?.whitelistUIDs || []).join(", "), "IDs permitted to trigger bot scripts when Whitelist Mode is active");
-  
-  addSelectField(form, "featureBox.whitelistThreadMode", "Group Whitelist Mode", cfg.featureBox?.whitelistThreadMode === true ? "true" : "false", [
-    { value: "true", label: "Enabled" },
-    { value: "false", label: "Disabled" }
-  ], "Restricts bot usage strictly to selected group chats");
-  addInputField(form, "featureBox.whitelistThreadIDs", "Whitelisted Thread IDs (Comma separated)", (cfg.featureBox?.whitelistThreadIDs || []).join(", "), "Thread IDs permitted to trigger bot scripts when Thread Whitelist is active");
-  
-  addSelectField(form, "featureBox.adminOnly", "Admin Only Mode", cfg.featureBox?.adminOnly === true ? "true" : "false", [
-    { value: "true", label: "Enabled" },
-    { value: "false", label: "Disabled" }
-  ], "Restricts bot commands to numbers registered as administrators");
-  addSelectField(form, "featureBox.antiInbox", "Block Inbox Commands", cfg.featureBox?.antiInbox === true ? "true" : "false", [
-    { value: "true", label: "Enabled (Groups only)" },
-    { value: "false", label: "Disabled" }
-  ], "If enabled, bot will refuse commands in private chats (DMs)");
-  addSelectField(form, "featureBox.unsendBotReact", "Unsend Command Reaction", cfg.featureBox?.unsendBotReact === true ? "true" : "false", [
-    { value: "true", label: "Enabled" },
-    { value: "false", label: "Disabled" }
-  ], "If user unsends their message, the bot can react with an emoji");
-  addInputField(form, "featureBox.unsendBotReactEmoji", "Unsend Reaction Emoji", cfg.featureBox?.unsendBotReactEmoji || "👍", "Emoji used when reacting to unsent messages");
-
-  // Section: Auto Load Settings
-  addSectionHeader(form, "Script Auto Loading");
-  addSelectField(form, "autoLoadScripts.enable", "Auto Reload Scripts", cfg.autoLoadScripts?.enable === true ? "true" : "false", [
-    { value: "true", label: "Enabled (Listens to scripts folder)" },
-    { value: "false", label: "Disabled" }
-  ], "Automatically unloads/reloads modified JS files under scripts/cmds without bot restart");
-
-  // Action footer
-  const footer = document.createElement("div");
-  footer.className = "config-actions";
-  footer.innerHTML = `
-    <button type="submit" class="btn btn-success"><i class="fa-solid fa-save"></i> Save Configuration</button>
-  `;
-  form.appendChild(footer);
-
-  form.onsubmit = saveConfigForm;
-}
-
-function addSectionHeader(form, text) {
-  const div = document.createElement("div");
-  div.className = "form-section";
-  div.innerText = text;
-  form.appendChild(div);
-}
-
-function addInputField(form, keyPath, labelText, value, helpText) {
-  const div = document.createElement("div");
-  div.className = "form-group";
-  div.innerHTML = `
-    <label for="cfg-${keyPath}">${labelText}</label>
-    <input type="text" id="cfg-${keyPath}" data-key="${keyPath}" value="${value}">
-    <span class="field-help">${helpText}</span>
-  `;
-  form.appendChild(div);
-}
-
-function addSelectField(form, keyPath, labelText, selectedValue, options, helpText) {
-  const div = document.createElement("div");
-  div.className = "form-group";
-
-  let optionsHtml = "";
-  options.forEach(opt => {
-    const isSelected = String(opt.value) === String(selectedValue) ? "selected" : "";
-    optionsHtml += `<option value="${opt.value}" ${isSelected}>${opt.label}</option>`;
-  });
-
-  div.innerHTML = `
-    <label for="cfg-${keyPath}">${labelText}</label>
-    <select id="cfg-${keyPath}" data-key="${keyPath}">
-      ${optionsHtml}
-    </select>
-    <span class="field-help">${helpText}</span>
-  `;
-  form.appendChild(div);
-}
-
-// Submit configuration form
-async function saveConfigForm(event) {
-  event.preventDefault();
-
-  const inputs = document.querySelectorAll("#config-form [data-key]");
-  const updatedCfg = JSON.parse(JSON.stringify(globalConfig));
-
-  inputs.forEach(input => {
-    const path = input.getAttribute("data-key");
-    const val = input.value;
-
-    // Resolve type conversion
-    let typedVal = val;
-    if (val === "true") typedVal = true;
-    else if (val === "false") typedVal = false;
-    else if (path === "express.port" || path === "autoUptime.timeInterval") {
-      typedVal = Number(val);
-    }
-
-    const parts = path.split(".");
-    let target = updatedCfg;
-
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      if (i === parts.length - 1) {
-        if (part === "adminBot" || part === "whitelistUIDs" || part === "whitelistThreadIDs") {
-          // parse comma string back into array
-          target[part] = val.split(",").map(item => item.trim()).filter(Boolean);
-        } else {
-          target[part] = typedVal;
+    if (global.GoatBot.DB.threads) {
+      threads = await global.GoatBot.DB.threads.count();
+      try {
+        const allThreads = await global.GoatBot.DB.threads.getAll();
+        for (const tid in allThreads) {
+          members += allThreads[tid].totalMember || 0;
         }
-      } else {
-        if (!target[part]) target[part] = {};
-        target = target[part];
-      }
+      } catch (_) { }
+    }
+    if (global.GoatBot.DB.users) {
+      users = await global.GoatBot.DB.users.count();
+    }
+
+    cachedDb = { threads, users, members };
+  }
+}
+
+function startMetricCaching() {
+  // Update CPU every 5 seconds
+  setInterval(async () => {
+    try {
+      cachedCpu = await getCpuUsage();
+    } catch (_) { }
+  }, 5000);
+
+  // Update storage every 60 seconds
+  setInterval(async () => {
+    try {
+      cachedStorage = await getStorageInfo();
+    } catch (_) { }
+  }, 60000);
+
+  // Update DB stats every 10 seconds
+  setInterval(async () => {
+    try {
+      await updateDbMetrics();
+    } catch (_) { }
+  }, 10000);
+
+  // Initial trigger
+  getCpuUsage().then(cpu => { cachedCpu = cpu; }).catch(() => { });
+  getStorageInfo().then(storage => { cachedStorage = storage; }).catch(() => { });
+  updateDbMetrics().catch(() => { });
+}
+
+let packageVersion = "1.0.0";
+let depCount = 0;
+try {
+  const pkg = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), "package.json"), "utf8"));
+  packageVersion = pkg.version || "1.0.0";
+  depCount = Object.keys(pkg.dependencies || {}).length + Object.keys(pkg.devDependencies || {}).length;
+} catch (_) { }
+
+function checkAuth(req, res, next) {
+  const cfg = global.GoatBot && global.GoatBot.config;
+  const token = cfg && cfg.express && cfg.express.secretToken ? cfg.express.secretToken : "Romeo";
+
+  const authHeader = req.headers.authorization;
+  const reqToken = req.query.token || (authHeader && authHeader.split(" ")[1]) || req.body.token;
+
+  if (reqToken !== token) {
+    return res.status(401).json({ status: "error", message: "Unauthorized: Invalid token" });
+  }
+  next();
+}
+
+let _log = null;
+function getLog() {
+  if (_log) return _log;
+  try { _log = require("../logger/log.js"); } catch (_) { }
+  if (!_log) {
+    _log = {
+      info: (tag, ...a) => console.log(`[INFO] ${tag}:`, ...a),
+      err: (tag, ...a) => console.log(`[ERR]  ${tag}:`, ...a),
+      warn: (tag, ...a) => console.log(`[WARN] ${tag}:`, ...a),
+      success: (tag, ...a) => console.log(`[DONE] ${tag}:`, ...a),
+    };
+  }
+  return _log;
+}
+
+async function startDashboard(app, io) {
+  const log = getLog();
+  const cfg = global.GoatBot && global.GoatBot.config;
+
+  // Start background caching for CPU/Storage metrics
+  startMetricCaching();
+
+  // Serve static files from dashboard folder
+  const dashboardDir = path.resolve(process.cwd(), "dashboard");
+  if (!fs.existsSync(dashboardDir)) {
+    fs.mkdirSync(dashboardDir, { recursive: true });
+  }
+  app.use("/dashboard", express.static(dashboardDir));
+
+  // Authenticated APIs
+  app.get("/api/metrics", checkAuth, async (req, res) => {
+    try {
+      const cpu = cachedCpu;
+      const storage = cachedStorage;
+      const { threads, users, members } = cachedDb;
+
+      res.json({
+        uptime: process.uptime(),
+        memory: {
+          rss: process.memoryUsage().rss,
+          heapUsed: process.memoryUsage().heapUsed,
+          heapTotal: process.memoryUsage().heapTotal,
+          systemTotal: os.totalmem(),
+          systemFree: os.freemem(),
+        },
+        cpu: cpu,
+        version: packageVersion,
+        nodeVersion: process.version,
+        storage: {
+          total: storage.size,
+          free: storage.free,
+        },
+        os: `${os.type()} ${os.release()} (${os.arch()})`,
+        dependencies: depCount,
+        activeThreads: threads,
+        totalUsers: users,
+        members: members,
+        commands: global.GoatBot.cmds ? global.GoatBot.cmds.size : 0,
+        events: global.GoatBot.events ? global.GoatBot.events.size : 0,
+      });
+    } catch (err) {
+      res.status(500).json({ status: "error", message: err.message });
     }
   });
 
-  try {
-    const res = await apiRequest("/api/config", "POST", { config: updatedCfg });
-    showToast(res.message);
-    globalConfig = updatedCfg;
-  } catch (err) { }
-}
+  app.get("/api/threads", checkAuth, async (req, res) => {
+    try {
+      if (global.GoatBot.DB && global.GoatBot.DB.threads) {
+        const all = await global.GoatBot.DB.threads.getAll();
+        return res.json(Object.values(all));
+      }
+      res.json([]);
+    } catch (err) {
+      res.status(500).json({ status: "error", message: err.message });
+    }
+  });
 
-// Bot Control Actions
-async function handleRestartBot() {
-  if (!confirm("Are you sure you want to restart the WhatsApp Bot?")) return;
+  app.get("/api/users", checkAuth, async (req, res) => {
+    try {
+      if (global.GoatBot.DB && global.GoatBot.DB.users) {
+        const all = await global.GoatBot.DB.users.getAll();
+        return res.json(Object.values(all));
+      }
+      res.json([]);
+    } catch (err) {
+      res.status(500).json({ status: "error", message: err.message });
+    }
+  });
 
-  try {
-    showToast("Triggering bot restart...", "warning");
-    const res = await apiRequest("/api/restart", "POST");
-    showToast(res.message);
+  app.post("/api/users/ban", checkAuth, async (req, res) => {
+    try {
+      const { uid, isBan, reason } = req.body;
+      if (!uid) return res.status(400).json({ status: "error", message: "Missing uid" });
+      if (global.GoatBot.DB && global.GoatBot.DB.users) {
+        await global.GoatBot.DB.users.set(uid, { isBan: !!isBan, banReason: reason || "" });
+        return res.json({ status: "success", message: `User ban status updated to ${!!isBan}` });
+      }
+      res.status(400).json({ status: "error", message: "Database not ready" });
+    } catch (err) {
+      res.status(500).json({ status: "error", message: err.message });
+    }
+  });
 
-    // Show reconnecting loader overlay
+  app.get("/api/commands", checkAuth, (req, res) => {
+    try {
+      const list = [];
+      if (global.GoatBot.cmds) {
+        global.GoatBot.cmds.forEach((val, key) => {
+          list.push({ name: key, config: val.config || {} });
+        });
+      }
+      res.json(list);
+    } catch (err) {
+      res.status(500).json({ status: "error", message: err.message });
+    }
+  });
+
+  app.get("/api/commands/code", checkAuth, (req, res) => {
+    try {
+      const { name } = req.query;
+      if (!name) return res.status(400).json({ status: "error", message: "Missing command name" });
+
+      const CMDS_DIR = path.resolve(process.cwd(), "scripts/cmds");
+      let filename = `${name.toLowerCase()}.js`;
+
+      const files = fs.readdirSync(CMDS_DIR).filter(f => f.endsWith(".js"));
+      for (const file of files) {
+        if (file.toLowerCase() === `${name.toLowerCase()}.js`) {
+          filename = file;
+          break;
+        }
+        try {
+          const content = fs.readFileSync(path.join(CMDS_DIR, file), "utf8");
+          if (content.includes(`name: '${name}'`) || content.includes(`name: "${name}"`) ||
+            content.includes(`name: "${name.toLowerCase()}"`) || content.includes(`name: '${name.toLowerCase()}'`)) {
+            filename = file;
+            break;
+          }
+        } catch (_) { }
+      }
+
+      const filePath = path.join(CMDS_DIR, filename);
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ status: "error", message: `Command script not found: ${filename}` });
+      }
+
+      const code = fs.readFileSync(filePath, "utf8");
+      res.json({ status: "success", code, filename });
+    } catch (err) {
+      res.status(500).json({ status: "error", message: err.message });
+    }
+  });
+
+  app.post("/api/commands/code", checkAuth, async (req, res) => {
+    try {
+      const { name, code } = req.body;
+      if (!name) return res.status(400).json({ status: "error", message: "Missing command name" });
+      if (code === undefined) return res.status(400).json({ status: "error", message: "Missing command code" });
+
+      const CMDS_DIR = path.resolve(process.cwd(), "scripts/cmds");
+      let filename = `${name.toLowerCase()}.js`;
+
+      const files = fs.readdirSync(CMDS_DIR).filter(f => f.endsWith(".js"));
+      for (const file of files) {
+        if (file.toLowerCase() === `${name.toLowerCase()}.js`) {
+          filename = file;
+          break;
+        }
+        try {
+          const content = fs.readFileSync(path.join(CMDS_DIR, file), "utf8");
+          if (content.includes(`name: '${name}'`) || content.includes(`name: "${name}"`) ||
+            content.includes(`name: "${name.toLowerCase()}"`) || content.includes(`name: '${name.toLowerCase()}'`)) {
+            filename = file;
+            break;
+          }
+        } catch (_) { }
+      }
+
+      const filePath = path.join(CMDS_DIR, filename);
+      fs.writeFileSync(filePath, code, "utf8");
+
+      try {
+        if (global.reloadCmd && global.GoatBot.api) {
+          await global.reloadCmd(filename, global.GoatBot.api);
+        }
+        res.json({ status: "success", message: `Command '${name}' saved and reloaded successfully ✓` });
+      } catch (reloadErr) {
+        res.json({
+          status: "success",
+          warning: reloadErr.message || String(reloadErr),
+          message: `Saved file ${filename}, but reload failed: ${reloadErr.message || String(reloadErr)}`
+        });
+      }
+    } catch (err) {
+      res.status(500).json({ status: "error", message: err.message });
+    }
+  });
+
+  app.get("/api/config", checkAuth, (req, res) => {
+    try {
+      const configPath = path.resolve(process.cwd(), "config.json");
+      const configData = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      res.json(configData);
+    } catch (err) {
+      res.status(500).json({ status: "error", message: err.message });
+    }
+  });
+
+  app.post("/api/config", checkAuth, (req, res) => {
+    try {
+      const configPath = path.resolve(process.cwd(), "config.json");
+      const newConfig = req.body.config;
+      if (!newConfig) return res.status(400).json({ status: "error", message: "Missing config data" });
+
+      fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2), "utf8");
+      global.GoatBot.config = newConfig;
+      res.json({ status: "success", message: "Configuration saved successfully" });
+    } catch (err) {
+      res.status(500).json({ status: "error", message: err.message });
+    }
+  });
+
+  app.post("/api/restart", checkAuth, (req, res) => {
+    res.json({ status: "success", message: "Bot is restarting..." });
+    log.warn("DASHBOARD", "Restart request received — exiting process in 1s…");
     setTimeout(() => {
-      handleLogout();
-    }, 1500);
-  } catch (err) { }
-}
-
-async function handleTerminateProcess() {
-  if (!confirm("CRITICAL: This will terminate the Node.js process. If you don't run this using pm2 or automated wrappers, the bot will stay offline. Proceed?")) return;
-
-  try {
-    showToast("Terminating bot process...", "danger");
-    await apiRequest("/api/restart", "POST");
-  } catch (err) { }
-}
-
-async function handleFlushCache() {
-  if (!confirm("Flush cache folder? This will delete temporary media files, but keeps logins.")) return;
-  showToast("Flush cache command completed successfully.");
-}
-
-// Session Inject Modal Handlers
-function openSessionModal() {
-  sessionModal.classList.remove("hidden");
-  sessionIdTextarea.value = "";
-  sessionIdTextarea.focus();
-}
-
-function closeSessionModal() {
-  sessionModal.classList.add("hidden");
-}
-
-async function submitSessionInjection() {
-  const sessionID = sessionIdTextarea.value.trim();
-  if (!sessionID) {
-    showToast("Please enter a Session ID.", "warning");
-    return;
-  }
-
-  if (!confirm("This will overwrite existing WhatsApp account auth folders and restart the bot. Proceed?")) return;
-
-  btnSubmitSession.disabled = true;
-  btnSubmitSession.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Injecting...';
-
-  try {
-    const res = await apiRequest("/api/session", "POST", { sessionID });
-    showToast(res.message);
-    closeSessionModal();
-
-    // Boot out after restart
-    setTimeout(() => {
-      handleLogout();
-    }, 2000);
-  } catch (err) {
-  } finally {
-    btnSubmitSession.disabled = false;
-    btnSubmitSession.innerHTML = '<i class="fa-solid fa-upload"></i> Inject & Restart';
-  }
-}
-
-// Global Search Filters
-function setupSearchFilters() {
-  // 1. Threads search
-  document.getElementById("threads-search").addEventListener("input", (e) => {
-    const term = e.target.value.toLowerCase();
-    const filtered = allThreads.filter(t =>
-      (t.tid && t.tid.toLowerCase().includes(term)) ||
-      (t.name && t.name.toLowerCase().includes(term))
-    );
-    renderThreads(filtered);
+      process.exit(2);
+    }, 1000);
   });
 
-  // 2. Users search
-  document.getElementById("users-search").addEventListener("input", (e) => {
-    const term = e.target.value.toLowerCase();
-    const filtered = allUsers.filter(u =>
-      (u.uid && u.uid.toLowerCase().includes(term)) ||
-      (u.name && u.name.toLowerCase().includes(term))
-    );
-    renderUsers(filtered);
-  });
+  app.post("/api/session", checkAuth, async (req, res) => {
+    const { sessionID } = req.body;
+    if (!sessionID) return res.status(400).json({ status: "error", message: "Missing sessionID" });
 
-  // 3. Commands search
-  document.getElementById("commands-search").addEventListener("input", (e) => {
-    const term = e.target.value.toLowerCase();
-    const filtered = allCommands.filter(c =>
-      (c.name && c.name.toLowerCase().includes(term)) ||
-      (c.config.category && c.config.category.toLowerCase().includes(term)) ||
-      (c.config.shortDescription && c.config.shortDescription.toLowerCase().includes(term)) ||
-      (c.config.longDescription && c.config.longDescription.toLowerCase().includes(term))
-    );
-    renderCommands(filtered);
-  });
-
-  // 4. Logs filter search
-  document.getElementById("logs-search").addEventListener("input", (e) => {
-    const term = e.target.value.toLowerCase();
-    const lines = document.querySelectorAll("#log-terminal .log-line");
-    lines.forEach(line => {
-      const text = line.innerText.toLowerCase();
-      if (text.includes(term)) {
-        line.style.display = "";
-      } else {
-        line.style.display = "none";
-      }
-    });
-  });
-}
-
-// Link Device Natively functionality
-async function generateLinkerQRCode() {
-  const qrSpinner = document.getElementById("linker-qr-spinner");
-  const qrImage = document.getElementById("linker-qr-image");
-  const qrInstructions = document.getElementById("linker-qr-instructions");
-
-  qrSpinner.classList.remove("hidden");
-  qrImage.classList.add("hidden");
-  qrInstructions.innerHTML = "Requesting QR code from server...";
-
-  try {
-    const res = await fetch("/qr", {
-      headers: {
-        "Authorization": `Bearer ${currentToken}`
-      }
-    });
-    const data = await res.json();
-    if (res.status !== 200 || !data.qr) {
-      throw new Error(data.code || "Failed to generate QR code.");
-    }
-
-    qrImage.src = data.qr;
-    qrImage.classList.remove("hidden");
-    qrInstructions.innerHTML = data.instructions.join("<br>");
-  } catch (err) {
-    qrInstructions.innerHTML = `<span style="color: var(--color-danger);"><i class="fas fa-exclamation-circle"></i> ${err.message || "Error generating QR code. Please try again."}</span>`;
-    showToast(err.message || "Failed to generate QR code.", "danger");
-  } finally {
-    qrSpinner.classList.add("hidden");
-  }
-}
-
-function setupLinkerListeners() {
-  const btnTogglePair = document.getElementById("btn-toggle-pair");
-  const btnToggleQr = document.getElementById("btn-toggle-qr");
-  const btnGeneratePair = document.getElementById("btn-generate-pair");
-  const btnCopyPairCode = document.getElementById("btn-copy-pair-code");
-  const inputMobileNumber = document.getElementById("linker-mobile-number");
-
-  const pairContent = document.getElementById("linker-pair-content");
-  const qrContent = document.getElementById("linker-qr-content");
-  const resultBox = document.getElementById("linker-result-box");
-
-  btnTogglePair.addEventListener("click", () => {
-    if (linkerMode === "pair") return;
-    linkerMode = "pair";
-    btnTogglePair.classList.add("active");
-    btnToggleQr.classList.remove("active");
-    pairContent.classList.remove("hidden");
-    qrContent.classList.add("hidden");
-    resultBox.classList.add("hidden");
-    btnCopyPairCode.classList.add("hidden");
-  });
-
-  btnToggleQr.addEventListener("click", () => {
-    if (linkerMode === "qr") return;
-    linkerMode = "qr";
-    btnToggleQr.classList.add("active");
-    btnTogglePair.classList.remove("active");
-    qrContent.classList.remove("hidden");
-    pairContent.classList.add("hidden");
-    resultBox.classList.add("hidden");
-    btnCopyPairCode.classList.add("hidden");
-    
-    generateLinkerQRCode();
-  });
-
-  btnGeneratePair.addEventListener("click", async () => {
-    const num = inputMobileNumber.value.trim();
-    if (!num) {
-      showToast("Please enter your phone number.", "warning");
-      return;
-    }
-
-    btnGeneratePair.disabled = true;
-    btnGeneratePair.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-    resultBox.classList.add("hidden");
-    btnCopyPairCode.classList.add("hidden");
+    res.json({ status: "success", message: "Session ID injected! Bot is restarting to apply session…" });
+    log.warn("DASHBOARD", "Session injection received — updating config.json and restarting…");
 
     try {
-      const numClean = num.replace(/[^0-9]/g, "");
-      const res = await fetch(`/pair?number=${numClean}`, {
-        headers: {
-          "Authorization": `Bearer ${currentToken}`
-        }
-      });
-      const data = await res.json();
-      if (res.status !== 200 || !data.code) {
-        throw new Error(data.code || "Failed to generate pairing code.");
+      const authFolder = path.resolve(process.cwd(), cfg.authFolder || "./auth");
+      if (fs.existsSync(authFolder)) {
+        fs.rmSync(authFolder, { recursive: true, force: true });
+        log.info("DASHBOARD", "Auth folder cleared for fresh session");
       }
 
-      resultBox.className = "linker-result-box success";
-      resultBox.innerHTML = `CODE: <span id="linker-result-code" style="color: var(--color-success); font-weight: 700; letter-spacing: 1.5px;">${data.code}</span>`;
-      resultBox.classList.remove("hidden");
-      
-      btnCopyPairCode.classList.remove("hidden");
-      showToast("Pairing code generated successfully!");
-    } catch (err) {
-      resultBox.className = "linker-result-box error";
-      resultBox.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${err.message || "Error generating code"}`;
-      resultBox.classList.remove("hidden");
-      showToast(err.message || "Failed to generate pairing code.", "danger");
-    } finally {
-      btnGeneratePair.disabled = false;
-      btnGeneratePair.innerHTML = '<i class="fas fa-key"></i> Generate Pair Code';
-    }
-  });
+      const configPath = path.resolve(process.cwd(), "config.json");
+      const configData = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      configData.sessionID = sessionID.trim();
+      fs.writeFileSync(configPath, JSON.stringify(configData, null, 2), "utf8");
 
-  btnCopyPairCode.addEventListener("click", () => {
-    const codeSpan = document.getElementById("linker-result-code");
-    if (!codeSpan) return;
-    const code = codeSpan.innerText;
-    navigator.clipboard.writeText(code).then(() => {
-      const originalText = btnCopyPairCode.innerHTML;
-      btnCopyPairCode.innerHTML = '<i class="fas fa-check"></i> Copied!';
+      global.GoatBot.config.sessionID = sessionID.trim();
+
       setTimeout(() => {
-        btnCopyPairCode.innerHTML = originalText;
-      }, 2000);
-    }).catch(err => {
-      showToast("Failed to copy code.", "danger");
-    });
-  });
-}
-
-// Event Listeners setup
-function setupEventListeners() {
-  setupLinkerListeners();
-  loginSubmitBtn.addEventListener("click", handleLoginSubmit);
-  adminKeyInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleLoginSubmit();
-  });
-
-  btnLogout.addEventListener("click", handleLogout);
-
-  navTabs.forEach(tab => {
-    tab.addEventListener("click", handleTabClick);
-  });
-
-  btnRestartBot.addEventListener("click", handleRestartBot);
-  btnTerminate.addEventListener("click", handleTerminateProcess);
-  btnFlush.addEventListener("click", handleFlushCache);
-
-  // Session Modal
-  btnSessionModal.addEventListener("click", openSessionModal);
-  btnCloseSessionModal.addEventListener("click", closeSessionModal);
-  btnCancelSession.addEventListener("click", closeSessionModal);
-  btnSubmitSession.addEventListener("click", submitSessionInjection);
-
-  // Clear Logs
-  document.getElementById("btn-clear-logs").addEventListener("click", () => {
-    document.getElementById("log-terminal").innerHTML = '<div class="log-line log-info">Console output cleared.</div>';
-  });
-
-  // Editor Modal listeners
-  btnCloseEditorModal.addEventListener("click", closeEditorModal);
-  btnCancelEditor.addEventListener("click", closeEditorModal);
-  btnSaveEditor.addEventListener("click", submitCodeEdit);
-
-  // Handle outside click modal close
-  window.addEventListener("click", (e) => {
-    if (e.target === sessionModal) {
-      closeSessionModal();
-    }
-    if (e.target === editorModal) {
-      closeEditorModal();
+        process.exit(2);
+      }, 1000);
+    } catch (err) {
+      log.err("DASHBOARD", "Session injection failed: " + err.message);
     }
   });
+
+  app.post("/api/logs/clear", checkAuth, (req, res) => {
+    try {
+      const logger = require("../logger/log.js");
+      if (logger && typeof logger.clearHistory === "function") {
+        logger.clearHistory();
+      }
+      // Broadcast to all clients to clear their screen
+      io.emit("console_log_clear");
+      res.json({ status: "success", message: "Console log history cleared in backend" });
+    } catch (err) {
+      res.status(500).json({ status: "error", message: err.message });
+    }
+  });
+
+  io.on("connection", (socket) => {
+    socket.emit("log_history", log.getHistory ? log.getHistory() : []);
+  });
+
+  log.success("DASHBOARD", "Dashboard backend endpoints initialized");
 }
 
-// Init Dashboard
-document.addEventListener("DOMContentLoaded", () => {
-  setupEventListeners();
-  setupSearchFilters();
-
-  // Check if session token exists
-  if (currentToken) {
-    loginContainer.classList.add("hidden");
-    dashboardContainer.classList.remove("hidden");
-    initSocket();
-    loadActiveTab();
-  } else {
-    loginContainer.classList.remove("hidden");
-    dashboardContainer.classList.add("hidden");
-  }
-});
-
-// Helper exposes toggleUserBan to HTML table scope
-window.toggleUserBan = toggleUserBan;
-window.openEditorModal = openEditorModal;
+module.exports = { startDashboard };

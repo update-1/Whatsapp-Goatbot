@@ -16,7 +16,7 @@ module.exports = {
   },
 
   onStart: async ({ api, event, args, message }) => {
-    if (!global.ST.DB) return message.reply("❌ Database not initialized.");
+    if (!global.GoatBot.DB) return message.reply("❌ Database not initialized.");
 
     const targetUID = getTargetUser(event, args);
     const phone = jidToPhone(targetUID);
@@ -25,7 +25,7 @@ module.exports = {
 
     let user;
     try {
-      user = await global.ST.DB.userData(targetUID);
+      user = await global.GoatBot.DB.userData(targetUID);
     } catch (e) {
       await message.react("❌");
       return message.reply("❌ Failed to fetch user data: " + e.message);
@@ -43,7 +43,7 @@ module.exports = {
     let role = "Member";
     if (event.isGroup) {
       try {
-        const thread = await global.ST.DB.threadsData(event.threadID);
+        const thread = await global.GoatBot.DB.threadsData(event.threadID);
         if (thread && thread.adminIDs && thread.adminIDs.includes(targetUID)) {
           role = "Group Admin 🛡️";
         }
@@ -76,14 +76,14 @@ module.exports = {
 
     let buffer = null;
     try {
-      const targetUrl = await global.ST.DB.userData.getAvatarUrl(api, targetUID);
+      const targetUrl = await global.GoatBot.DB.userData.getAvatarUrl(api, targetUID);
       const res = await axios.get(targetUrl, { responseType: 'arraybuffer', timeout: 5000 });
       buffer = Buffer.from(res.data);
     } catch (e) { }
 
     await message.react("✅");
     if (buffer) {
-      return api.sendImage(buffer, event.threadID, text);
+      return api.sendImage(buffer, event.threadID, text, { mentions: [targetUID] });
     } else {
       return api.sendMessage({ body: text, mentions: [targetUID] }, event.threadID);
     }

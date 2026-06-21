@@ -25,8 +25,8 @@
     "warnReason": [],
     "data": {},
     "createdAt": "2026-06-20T10:42:06.725Z",
-    "updatedAt": "2026-06-20T21:17:36.293Z",
-    "msgCount": 342
+    "updatedAt": "2026-06-21T11:04:40.389Z",
+    "msgCount": 416
   },
   "262023791247378@lid": {
     "uid": "262023791247378@lid",
@@ -127,8 +127,8 @@
     "warnReason": [],
     "data": {},
     "createdAt": "2026-06-20T11:09:00.502Z",
-    "updatedAt": "2026-06-20T20:41:08.508Z",
-    "msgCount": 10
+    "updatedAt": "2026-06-21T09:50:59.535Z",
+    "msgCount": 11
   },
   "52145818697835@lid": {
     "uid": "52145818697835@lid",
@@ -172,8 +172,8 @@
     "warnReason": [],
     "data": {},
     "createdAt": "2026-06-20T11:41:04.930Z",
-    "updatedAt": "2026-06-20T20:17:37.919Z",
-    "msgCount": 22
+    "updatedAt": "2026-06-21T09:39:08.527Z",
+    "msgCount": 27
   },
   "264969971077325@lid": {
     "uid": "264969971077325@lid",
@@ -741,8 +741,8 @@
     "warnReason": [],
     "data": {},
     "createdAt": "2026-06-20T12:42:50.056Z",
-    "updatedAt": "2026-06-20T13:46:40.705Z",
-    "msgCount": 1
+    "updatedAt": "2026-06-21T10:40:57.713Z",
+    "msgCount": 2
   },
   "239535090864164@lid": {
     "uid": "239535090864164@lid",
@@ -1881,8 +1881,8 @@
     "warnReason": [],
     "data": {},
     "createdAt": "2026-06-20T13:03:06.317Z",
-    "updatedAt": "2026-06-20T15:01:47.703Z",
-    "msgCount": 1
+    "updatedAt": "2026-06-21T09:51:37.008Z",
+    "msgCount": 3
   },
   "256693652971521@lid": {
     "uid": "256693652971521@lid",
@@ -2193,8 +2193,8 @@
     "warnReason": [],
     "data": {},
     "createdAt": "2026-06-20T14:13:12.955Z",
-    "updatedAt": "2026-06-20T21:17:41.823Z",
-    "msgCount": 3
+    "updatedAt": "2026-06-21T07:41:08.218Z",
+    "msgCount": 11
   },
   "203582087426197@lid": {
     "uid": "203582087426197@lid",
@@ -2618,6 +2618,123 @@
     "data": {},
     "createdAt": "2026-06-20T21:17:36.016Z",
     "updatedAt": "2026-06-20T21:17:36.055Z",
+    "msgCount": 1
+  },
+  "105493523611714": {
+    "uid": "105493523611714",
+    "name": "Unknown",
+    "pfp": null,
+    "money": 0,
+    "exp": 0,
+    "isBan": false,
+    "banReason": "",
+    "warnCount": 0,
+    "warnReason": [],
+    "data": {},
+    "createdAt": "2026-06-21T07:46:33.396Z",
+    "updatedAt": "2026-06-21T07:46:33.396Z"
+  },
+  "105493523611714@s.whatsapp.net": {
+    "uid": "105493523611714@s.whatsapp.net",
+    "name": "Unknown",
+    "pfp": null,
+    "money": 0,
+    "exp": 0,
+    "isBan": false,
+    "banReason": "",
+    "warnCount": 0,
+    "warnReason": [],
+    "data": {},
+    "createdAt": "2026-06-21T07:46:33.398Z",
+    "updatedAt": "2026-06-21T07:46:33.398Z"
+  },
+  "246870660145375@s.whatsapp.net": {
+    "uid": "246870660145375@s.whatsapp.net",
+    "name": "MD Romeo Islam Rasel",
+    "pfp": null,
+    "money": 0,
+    "exp": 0,
+    "isBan": false,
+    "banReason": "",
+    "warnCount": 0,
+    "warnReason": [],
+    "data": {},
+    "createdAt": "2026-06-21T08:51:06.455Z",
+    "updatedAt": "2026-06-21T09:07:32.125Z",
+    "msgCount": 15
+  },
+  "124627737141363@s.whatsapp.net": {
+    "uid": "124627737141363@s.whatsapp.net",
+    "name": "Géórgíñá🥺❤️",
+    "pfp": null,
+    "money": 0,
+    "exp": 0,
+    "isBan": false,
+    "banReason": "",
+    "warnCount": 0,
+    "warnReason": [],
+    "data": {},
+    "createdAt": "2026-06-21T08:54:39.960Z",
+    "updatedAt": "2026-06-21T08:54:39.964Z",
+    "msgCount": 1
+  },
+  "159202274218103@s.whatsapp.net": {
+    "uid": "159202274218103@s.whatsapp.net",
+    "name": "Smoochie ❤️‍🔥😘🥰",
+    "pfp": null,
+    "money": 0,
+    "exp": 0,
+    "isBan": false,
+    "banReason": "",
+    "warnCount": 0,
+    "warnReason": [],
+    "data": {},
+    "createdAt": "2026-06-21T09:07:42.437Z",
+    "updatedAt": "2026-06-21T09:07:42.441Z",
+    "msgCount": 1
+  },
+  "8801886778380:16@s.whatsapp.net": {
+    "uid": "8801886778380:16@s.whatsapp.net",
+    "name": "Unknown",
+    "pfp": null,
+    "money": 0,
+    "exp": 0,
+    "isBan": false,
+    "banReason": "",
+    "warnCount": 0,
+    "warnReason": [],
+    "data": {},
+    "createdAt": "2026-06-21T09:09:42.224Z",
+    "updatedAt": "2026-06-21T09:09:42.224Z"
+  },
+  "201683695059050@lid": {
+    "uid": "201683695059050@lid",
+    "name": "Thefool",
+    "pfp": null,
+    "money": 0,
+    "exp": 0,
+    "isBan": false,
+    "banReason": "",
+    "warnCount": 0,
+    "warnReason": [],
+    "data": {},
+    "createdAt": "2026-06-21T09:16:39.228Z",
+    "updatedAt": "2026-06-21T09:16:39.232Z",
+    "msgCount": 1
+  },
+  "258952856105060@lid": {
+    "uid": "258952856105060@lid",
+    "name": "Jeffersøn Barts",
+    "pfp": null,
+    "money": 0,
+    "exp": 0,
+    "isBan": false,
+    "banReason": "",
+    "warnCount": 0,
+    "warnReason": [],
+    "data": {},
+    "createdAt": "2026-06-21T10:15:44.920Z",
+    "updatedAt": "2026-06-21T10:15:44.924Z",
     "msgCount": 1
   }
 }

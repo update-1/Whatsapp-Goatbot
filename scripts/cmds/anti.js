@@ -36,12 +36,12 @@ module.exports = {
     }
 
     if (toggle !== "on" && toggle !== "off") {
-      const current = global.ST.config.featureBox[featureMap[feature]];
+      const current = global.GoatBot.config.featureBox[featureMap[feature]];
       return message.reply(`ℹ️ ${feature} is currently: ${current ? "ON" : "OFF"}\nUse !anti ${feature} on/off to toggle.`);
     }
 
     const newVal = toggle === "on";
-    global.ST.config.featureBox[featureMap[feature]] = newVal;
+    global.GoatBot.config.featureBox[featureMap[feature]] = newVal;
 
     return message.reply(`✅ *${feature}* has been turned ${toggle.toUpperCase()}.`);
   }
