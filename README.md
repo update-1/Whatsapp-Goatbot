@@ -11,7 +11,7 @@
 ## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/mdraselm325/Whatsapp-Goatbot.git
+git clone https://github.com/romeoislamrasel/Whatsapp-Goatbot.git
 cd Whatsapp-Goatbot
 npm install
 npm start
