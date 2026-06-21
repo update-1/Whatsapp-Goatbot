@@ -46,7 +46,7 @@ async function startExpress() {
   const app = express();
   _app = app;
   const server = http.createServer(app);
-  const port = (cfg.express && cfg.express.port) || 3000;
+  const port = process.env.PORT || (cfg.express && cfg.express.port) || 3000;
 
   app.use(express.json());
 
