@@ -222,7 +222,7 @@ function baileysConnect(options, callback) {
         const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 3000, 1023451250] }));
 
         const phoneNumber = options.phoneNumber ? normUID(String(options.phoneNumber)) : null;
-        const usePairingCode = options.usePairingCode || !!phoneNumber;
+        const usePairingCode = options.usePairingCode === true;
         const printQR = options.printQR !== false && !usePairingCode;
 
         const sock = makeWASocket({

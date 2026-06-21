@@ -47,5 +47,9 @@
   "autoLoadScripts": {
     "enable": true,
     "notes": "this feature will automatically load the script when scripts have been changed"
+  },
+  "autoUpdate": {
+    "enable": false,
+    "notes": "if true, bot will auto-check and install updates from GitHub on every startup"
   }
 }

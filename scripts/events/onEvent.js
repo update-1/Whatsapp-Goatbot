@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 /**
  * onEvent.js — Generic event router.

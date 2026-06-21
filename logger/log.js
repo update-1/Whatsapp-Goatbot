@@ -36,23 +36,28 @@ function getDate() {
 }
 
 function stamp() {
-  return colors.gray(`[${getTime()} ${getDate()}]`);
+  return colors.gray(`${getTime()} ${getDate()}`);
 }
 
-function tag(label, colorFn) {
-  return colorFn(`[${label}]`);
-}
-
-function dash() {
-  return colors.hex("#444444", "─");
+function getPrefixColor(prefix) {
+  const p = String(prefix || "").toUpperCase();
+  if (p === "VERSION" || p === "V" || p === "UPDATE") return colors.hex("#74b9ff");
+  if (p === "CONFIG" || p === "SESSION" || p === "LOGIN" || p === "CONNECT") return colors.hex("#f5ab00");
+  if (p === "DATABASE" || p === "SQLITE" || p === "DB") return colors.hex("#22d39a");
+  if (p === "SCRIPTS" || p === "CMD" || p === "EVENT" || p === "AUTO LOAD") return colors.hex("#a29bfe");
+  if (p === "EXPRESS" || p === "SOCKET" || p === "DASHBOARD") return colors.hex("#00cec9");
+  if (p === "READY" || p === "SUCCESS" || p === "STEP 7" || p === "BOT ID") return colors.greenBright;
+  if (p === "WARN" || p === "WARNING") return colors.yellowBright;
+  if (p === "ERR" || p === "ERROR" || p === "FAIL") return colors.redBright;
+  return colors.cyanBright;
 }
 
 function buildLine(level, colorFn, prefix, message) {
   if (message === undefined) { message = prefix; prefix = null; }
-  const labelPart = prefix
-    ? `${tag(level, colorFn)} ${colorFn.bold ? colorFn.bold(prefix + ":") : colors.bold[level] ? colors.bold[level](prefix + ":") : colorFn(prefix + ":")} ${message}`
-    : `${tag(level, colorFn)} ${message}`;
-  return `${stamp()} ${labelPart}`;
+  if (!prefix) return `${stamp()}  ${message}`;
+  const label = `${prefix}:`;
+  const labelColor = colorFn || getPrefixColor(prefix);
+  return `${stamp()}  ${labelColor(label)} ${message}`;
 }
 
 const log = {
@@ -88,13 +93,15 @@ const log = {
     }
   },
   divider(label = "") {
-    const line = "─".repeat(50);
+    const width = 70;
     if (label) {
-      const padded = `──── ${label} `;
-      const rest = "─".repeat(Math.max(0, 52 - padded.length));
-      console.log(colors.hex("#555555")(padded + rest));
+      const text = ` ${label} `;
+      const left = Math.max(0, Math.floor((width - text.length) / 2));
+      const right = Math.max(0, width - left - text.length);
+      const dividerLine = "─".repeat(left) + text + "─".repeat(right);
+      console.log(colors.hex("#f5ab00")(dividerLine));
     } else {
-      console.log(colors.hex("#555555")(line));
+      console.log(colors.hex("#f5ab00")("─".repeat(width)));
     }
   },
   banner(lines = []) {

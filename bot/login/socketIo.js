@@ -83,7 +83,7 @@ async function startExpress() {
     server.listen(port, (err) => {
       if (err) return reject(err);
       _server = server;
-      log.success("STEP 5", `Express + Socket.IO running on port ${port}`);
+      log.success("EXPRESS", `Express + Socket.IO running on port ${port}`);
       resolve();
     });
   });

@@ -1,0 +1,36 @@
+[
+  {
+    "version": "1.1.2",
+    "files": {
+      "index.js": "Project startup wrapper",
+      "update.js": "Updater entry point",
+      "updater.js": "Core updater engine"
+    }
+  },
+  {
+    "version": "1.1.3",
+    "files": {
+      "bot/login/login.js": "update startup banner, version mismatch notice, and login log labels",
+      "bot/login/loadData.js": "update database startup log label",
+      "bot/login/loadScripts.js": "update script/event startup log labels",
+      "bot/login/socketIo.js": "update express/socket startup log label",
+      "logger/log.js": "improve log formatting and colorized prefixes"
+    }
+  },
+  {
+    "version": "1.1.4",
+    "files": {
+      "bot/login/login.js": "redesign startup banner and improve login connection handling",
+      "bot/login/baileys.js": "update baileys connection options",
+      "logger/log.js": "add color-coded prefix system and improve divider formatting",
+      "config.json": "add autoUpdate config option for GitHub update checks",
+      "scripts/cmds/file.js": "new command for server file management",
+      "scripts/cmds/update.js": "new command for in-chat update control",
+      "update.js": "automatic GitHub update downloader",
+      "updater.js": "core updater engine with backup and restore",
+      "restoreBackup.js": "utility to restore bot from backup archives",
+      "Goat.js": "fix auto-update: load config before startup to enable auto-update check",
+      "scripts/cmds/update.js": "add onReply handler to restart bot after update"
+    }
+  }
+]

@@ -20,6 +20,51 @@ function ask(prompt) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+async function checkVersionUpdate(currentVersion) {
+  const repoPkgUrl = "https://raw.githubusercontent.com/update-1/Whatsapp-Goatbot/main/package.json";
+
+  try {
+    const axios = require("axios");
+    const response = await axios.get(repoPkgUrl, {
+      timeout: 10000,
+      responseType: "json"
+    });
+
+    const remoteVersion = response?.data?.version;
+    if (!remoteVersion) return false;
+
+    const toParts = (v) => String(v || "0").split(".").map(n => Number.isNaN(Number(n)) ? 0 : Number(n));
+    const localParts = toParts(currentVersion);
+    const remoteParts = toParts(remoteVersion);
+
+    const compareVersions = (a, b) => {
+      const max = Math.max(a.length, b.length);
+      for (let i = 0; i < max; i++) {
+        const av = a[i] || 0;
+        const bv = b[i] || 0;
+        if (av > bv) return 1;
+        if (av < bv) return -1;
+      }
+      return 0;
+    };
+
+    const result = compareVersions(remoteParts, localParts);
+    if (result > 0) {
+      global.log.info("VERSION", `Update available: ${currentVersion} → ${remoteVersion}`);
+      return true;
+    } else if (result === 0) {
+      global.log.info("VERSION", `Version check: ${currentVersion} (up to date)`);
+      return false;
+    } else {
+      global.log.info("VERSION", `Version check: ${currentVersion} (local is newer)`);
+      return true;
+    }
+  } catch (error) {
+    global.log.warn("VERSION", "Could not verify remote version: " + error.message);
+    return false;
+  }
+}
+
 // ─── Config helpers ───────────────────────────────────────────────────────────
 function loadConfig() {
   try {
@@ -295,7 +340,7 @@ function attemptConnect(baileys, opts) {
 
       const selfID = api.getCurrentUserID ? api.getCurrentUserID() : (api.ctx?.selfID || "");
       const phone = selfID.split(":")[0].split("@")[0] || selfID;
-      global.log.success("STEP 2", "Account: " + phone);
+      global.log.success("ACCOUNT", "Connected as: " + phone);
 
       resolve(api);
     });
@@ -309,18 +354,20 @@ module.exports = async function startBot() {
   const currentVersion = packageJson.version || "1.0.0";
   const grad = (text, stops) => global.gradient ? global.gradient(text, stops) : text;
 
+  const versionMismatch = await checkVersionUpdate(currentVersion);
+
   const titles = [
     [
-      "░██╗░░░░░░░██╗██╗░░██╗░█████╗░████████╗░██████╗░█████╗░██████╗░██████╗░  ██████╗░░█████╗░████████╗",
-      "░██║░░██╗░░██║██║░░██║██╔══██╗╚══██╔══╝██╔════╝██╔══██╗██╔══██╗██╔══██╗  ██╔══██╗██╔══██╗╚══██╔══╝",
-      "░╚██╗████╗██╔╝███████║███████║░░░██║░░░╚█████╗░███████║██████╔╝██████╔╝  ██████╦╝██║░░██║░░░██║░░░",
-      "░░████╔═████║░██╔══██║██╔══██║░░░██║░░░░╚═══██╗██╔══██║██╔═══╝░██╔═══╝░  ██╔══██╗██║░░██║░░░██║░░░",
-      "░░╚██╔╝░╚██╔╝░██║░░██║██║░░██║░░░██║░░░██████╔╝██║░░██║██║░░░░░██║░░░░░  ██████╦╝╚█████╔╝░░░██║░░░",
-      "░░░╚═╝░░░╚═╝░░╚═╝░░╚═╝╚═╝░░╚═╝░░░╚═╝░░░╚═════╝░╚═╝░░╚═╝╚═╝░░░░░╚═╝░░░░░  ╚═════╝░░╚════╝░░░░╚═╝░░░"
+      "██████╗  ██████╗  █████╗ ████████╗    ██╗   ██╗██████╗",
+      "██╔════╝ ██╔═══██╗██╔══██╗╚══██╔══╝    ██║   ██║╚════██╗",
+      "██║  ███╗██║   ██║███████║   ██║       ██║   ██║ █████╔╝",
+      "██║   ██║██║   ██║██╔══██║   ██║       ╚██╗ ██╔╝██╔═══╝",
+      "╚██████╔╝╚██████╔╝██║  ██║   ██║        ╚████╔╝ ███████╗",
+      "╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝         ╚═══╝  ╚══════╝"
     ],
     [
-      "█░█░█ █░█ ▄▀█ ▀█▀ █▀ ▄▀█ █▀█ █▀█   █▄▄ █▀█ ▀█▀",
-      "▀▄▀▄▀ █▀█ █▀█ ░█░ ▄█ █▀█ █▀▀ █▀▀   █▄█ █▄█ ░█░"
+      "█▀▀ █▀█ ▄▀█ ▀█▀  █▄▄ █▀█ ▀█▀  █░█ ▀█",
+      "█▄█ █▄█ █▀█ ░█░  █▄█ █▄█ ░█░  ▀▄▀ █▄"
     ],
     [
       "W H A T S A P P  G O A T B O T @" + currentVersion
@@ -330,11 +377,11 @@ module.exports = async function startBot() {
     ]
   ];
   const maxWidth = process.stdout.columns || 80;
-  const title = maxWidth > 100 ?
+  const title = maxWidth > 58 ?
     titles[0] :
-    maxWidth > 45 ?
+    maxWidth > 36 ?
       titles[1] :
-      maxWidth > 25 ?
+      maxWidth > 26 ?
         titles[2] :
         titles[3];
 
@@ -359,8 +406,9 @@ module.exports = async function startBot() {
 
   function centerText(text, length) {
     const columns = process.stdout.columns || 80;
-    const left = Math.max(0, Math.floor((columns - length) / 2));
-    console.log(" ".repeat(left) + text);
+    const left = Math.max(0, Math.floor((columns - (length || text.length)) / 2));
+    const right = Math.max(0, columns - left - (length || text.length));
+    console.log(" ".repeat(left) + text + " ".repeat(right));
   }
 
   console.log(grad(createLine(null, true), ["#f5af19", "#f12711"]));
@@ -391,21 +439,28 @@ module.exports = async function startBot() {
   }
   centerText(grad(author, ["#9F98E8", "#AFF6CF"]), author.length);
   centerText(grad(srcUrl, ["#9F98E8", "#AFF6CF"]), srcUrl.length);
-  centerText(grad(fakeRelease, ["#f5af19", "#f12711"]), fakeRelease.length);
+  if (versionMismatch) {
+    centerText(grad(fakeRelease, ["#f5af19", "#f12711"]), fakeRelease.length);
+  }
+  console.log();
+
+  const startLoggingText = "START LOGGING IN";
+  const startLoggingLine = createLine(startLoggingText, true);
+  console.log(grad(startLoggingLine, ["#f5af19", "#f12711"]));
   console.log();
 
   // ── Step 1: Config ────────────────────────────────────────────────────────
-  global.log.divider("STEP 1 — CONFIG");
+  global.log.divider("CONFIG");
   loadConfig();
   loadConfigCommands();
   setupWatchers();
-  global.log.success("STEP 1", "Config loaded — prefix: " + (global.GoatBot.config.prefix || "!") +
+  global.log.success("CONFIG", "Config loaded — prefix: " + (global.GoatBot.config.prefix || "!") +
     " | bot: " + (global.GoatBot.config.botName || "EF-Prime Bot"));
 
   await sleep(120);
 
   // ── Step 2: Session ID → auto-import before connect ─────────────────────
-  global.log.divider("STEP 2 — SESSION / CONNECT");
+  global.log.divider("SESSION / CONNECT");
   await checkAndImportSession();
   const api = await connect();
   global.GoatBot.api = api;
@@ -443,7 +498,7 @@ module.exports = async function startBot() {
   // ── Step 6: Admin list ────────────────────────────────────────────────────
   const admins = global.GoatBot.config.adminBot || [];
   const { colors: _c } = require("../../logger/colors.js");
-  global.log.divider("STEP 6 — ADMINS");
+  global.log.divider("ADMINS");
   if (admins.length === 0) {
     console.log("  " + _c.hex("#7f8fa6")("─── not configured ───"));
   } else {
@@ -490,7 +545,7 @@ module.exports = async function startBot() {
   const prefix = global.GoatBot.config.prefix || "!";
   const botName = global.GoatBot.config.botName || "Baileys Bot";
 
-  global.log.success("STEP 7",
+  global.log.success("READY",
     botName + " ready in " + elapsed + "s  |  " +
     cmds + " cmds  |  " + events + " events  |  prefix: " + prefix
   );

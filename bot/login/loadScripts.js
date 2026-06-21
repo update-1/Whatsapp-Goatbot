@@ -124,7 +124,7 @@ async function loadCommands(api) {
   if (skipped > 0) cmdSuffix += `  |  Skipped: ${skipped}`;
   if (failed > 0) cmdSuffix += `  |  Failed: ${failed}`;
   spinner.succeed(`Commands loaded: ${loaded}${cmdSuffix}`);
-  log.success("STEP 4", `Commands: ${loaded} loaded` + cmdSuffix);
+  log.success("SCRIPTS", `Commands: ${loaded} loaded` + cmdSuffix);
 }
 
 /**
@@ -184,7 +184,7 @@ async function loadEvents(api) {
   if (skipped > 0) evtSuffix += `  |  Skipped: ${skipped}`;
   if (failed > 0) evtSuffix += `  |  Failed: ${failed}`;
   spinner.succeed(`Events loaded: ${loaded}${evtSuffix}`);
-  log.success("STEP 4", `Events: ${loaded} loaded` + evtSuffix);
+  log.success("SCRIPTS", `Events: ${loaded} loaded` + evtSuffix);
 }
 
 function watchScripts(api) {
@@ -244,7 +244,7 @@ function watchScripts(api) {
  * @param {object} api
  */
 async function loadScripts(api) {
-  log.divider("STEP 4 — SCRIPTS");
+  log.divider("SCRIPTS");
   await loadCommands(api);
   await loadEvents(api);
 

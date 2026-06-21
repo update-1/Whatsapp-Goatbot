@@ -87,6 +87,25 @@ process.on("exit", (code) => {
   if (code !== 0 && code !== 2) log.warn("EXIT", "Process exiting with code " + code);
 });
 
+// ─── Auto-update (if enabled in config) ──────────────────────────────────────
+try {
+  const cfg = JSON.parse(require("fs").readFileSync("./config.json", "utf8"));
+  if (cfg.autoUpdate?.enable) {
+    global.GoatBot.config.autoUpdate = cfg.autoUpdate;
+  }
+} catch (_) {}
+if (global.GoatBot.config.autoUpdate?.enable) {
+  log.info("UPDATE", "Auto-update enabled, checking for updates...");
+  const { execSync } = require("child_process");
+  const path = require("path");
+  try {
+    execSync("node update.js", { cwd: __dirname, stdio: "inherit", timeout: 120000 });
+    log.info("UPDATE", "Auto-update completed.");
+  } catch (e) {
+    log.warn("UPDATE", "Auto-update failed: " + e.message);
+  }
+}
+
 // ─── Start ───────────────────────────────────────────────────────────────────
 require("./bot/login/login.js")().catch((e) => {
   log.err("STARTUP", e.message || String(e));

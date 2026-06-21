@@ -9,7 +9,7 @@ const { attachGlobalDB, userData, threadsData } = require("../../database/contro
  * @param {object} api  WCA api
  */
 async function loadData(api) {
-  log.divider("STEP 3 — DATABASE");
+  log.divider("DATABASE");
 
   const cfg = global.GoatBot.config;
   const dbType = (cfg.database && cfg.database.type) || "json";
@@ -40,7 +40,7 @@ async function loadData(api) {
     const threadCount = await threadsData.count();
     spinner.succeed(`Database ready — ${userCount} user(s), ${threadCount} thread(s)`);
 
-    log.success("STEP 3", `Users: ${userCount} | Threads: ${threadCount} | Type: ${global.GoatBot.config.database.type}`);
+    log.success("DATABASE", `Users: ${userCount} | Threads: ${threadCount} | Type: ${global.GoatBot.config.database.type}`);
   } catch (e) {
     spinner.fail("Database load error: " + e.message);
     log.err("DATABASE", e.message);
