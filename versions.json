@@ -25,12 +25,18 @@
       "logger/log.js": "add color-coded prefix system and improve divider formatting",
       "config.json": "add autoUpdate config option for GitHub update checks",
       "scripts/cmds/file.js": "new command for server file management",
-      "scripts/cmds/update.js": "new command for in-chat update control",
+      "scripts/cmds/update.js": "add onReply handler to restart bot after update",
       "update.js": "automatic GitHub update downloader",
       "updater.js": "core updater engine with backup and restore",
       "restoreBackup.js": "utility to restore bot from backup archives",
-      "Goat.js": "fix auto-update: load config before startup to enable auto-update check",
-      "scripts/cmds/update.js": "add onReply handler to restart bot after update"
+      "Goat.js": "fix auto-update: load config before startup to enable auto-update check"
+    }
+  },
+  {
+    "version": "1.1.5",
+    "files": {
+      "scripts/cmds/update.js": "fix react-to-update: use await reply, hardcode commandName, normUID auth check, clear require cache",
+      "updater.js": "fix version filter bug, single backup folder named after latest version, skip identical files, package.json updated once"
     }
   }
 ]

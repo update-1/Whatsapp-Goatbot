@@ -1,18 +1,20 @@
+"use strict";
+
 const axios = require("axios");
 const fs = require("fs-extra");
 const { execSync } = require("child_process");
 const path = require("path");
+const { normUID } = require("../../bot/login/baileys.js");
 
 const repoOwner = "update-1";
 const repoName = "Whatsapp-Goatbot";
 const repoBranch = "main";
 const baseUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${repoBranch}`;
-const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}`;
 
 module.exports = {
 	config: {
 		name: "update",
-		version: "1.0",
+		version: "2.0",
 		author: "Rômeo",
 		role: 2,
 		shortDescription: {
@@ -26,10 +28,14 @@ module.exports = {
 		}
 	},
 
-	onStart: async function ({ message, event, commandName }) {
+	// ── onStart: check for updates and prompt user to react ──────────────────
+	onStart: async function ({ message, event }) {
 		try {
 			const { data: remotePkg } = await axios.get(`${baseUrl}/package.json`, { timeout: 15000 });
 			const { data: versions } = await axios.get(`${baseUrl}/versions.json`, { timeout: 15000 });
+
+			// Clear require cache so we always get the real current version
+			delete require.cache[require.resolve("../../package.json")];
 			const currentVersion = require("../../package.json").version;
 
 			if (compareVersion(remotePkg.version, currentVersion) < 1)
@@ -53,36 +59,44 @@ module.exports = {
 				`💫 New version v${remotePkg.version} available (current: v${currentVersion})\n\n` +
 				`⬆️ Files to update:\n${displayUpdate}${totalUpdate > 10 ? `\n ...and ${totalUpdate - 10} more` : ""}` +
 				(totalDelete > 0 ? `\n\n🗑️ Files to delete:\n${displayDelete}${totalDelete > 10 ? `\n ...and ${totalDelete - 10} more` : ""}` : "") +
-				"\n\nReact to this message to confirm update.";
+				"\n\n💡 React to this message to confirm update.";
 
-			message.reply(msg, (err, info) => {
-				if (err) return;
-				global.GoatBot.onReaction.set(info.messageID, {
-					commandName,
-					messageID: info.messageID,
-					threadID: info.threadID,
-					authorID: event.senderID
-				});
+			// ── await-based (WhatsApp bot uses Promise API, not callbacks) ────
+			const info = await message.reply(msg);
+			if (!info || !info.messageID) return;
+
+			// ── commandName hardcoded: handler doesn't inject it into onStart ─
+			global.GoatBot.onReaction.set(info.messageID, {
+				commandName: "update",
+				messageID: info.messageID,
+				threadID: info.threadID,
+				authorID: event.senderID
 			});
 		} catch (err) {
 			message.reply(`❌ Error checking updates: ${err.message}`);
 		}
 	},
 
-	onReaction: async function ({ message, event, Reaction, commandName }) {
-		if (event.senderID !== Reaction.authorID) return;
+	// ── onReaction: confirmed — run updater ──────────────────────────────────
+	onReaction: async function ({ message, event, Reaction }) {
+		// normUID handles JID format differences (e.g. :40@s.whatsapp.net vs plain number)
+		if (normUID(event.senderID) !== normUID(Reaction.authorID)) return;
 
-		await message.reply("🚀 Updating...");
+		await message.react("⏳");
+		await message.reply("🚀 Confirmed, updating...");
 
 		try {
-			const { data: versions } = await axios.get(`${baseUrl}/versions.json`, { timeout: 15000 });
-			fs.writeFileSync(path.resolve(__dirname, "../../versions.json"), JSON.stringify(versions, null, 2));
-
 			execSync("node update.js", { cwd: path.resolve(__dirname, "../.."), stdio: "inherit" });
-			const msg = await message.reply("✅ Update complete. Reply 'yes' or 'y' to restart the bot.");
-			global.GoatBot.onReply.set(msg.messageID, {
-				commandName,
-				messageID: msg.messageID,
+
+			// ── await-based + commandName hardcoded ───────────────────────────
+			const info = await message.reply(
+				"✅ Update complete!\n\n🔄 *Quote-reply* this message with *yes* or *y* to restart the bot now."
+			);
+			if (!info || !info.messageID) return;
+
+			global.GoatBot.onReply.set(info.messageID, {
+				commandName: "update",
+				messageID: info.messageID,
 				threadID: event.threadID,
 				authorID: event.senderID
 			});
@@ -91,29 +105,29 @@ module.exports = {
 		}
 	},
 
+	// ── onReply: quote-reply "yes" or "y" to restart ─────────────────────────
 	onReply: async function ({ message, event, Reply }) {
-		if (event.senderID !== Reply.authorID) return;
+		if (normUID(event.senderID) !== normUID(Reply.authorID)) return;
+
 		const answer = (event.body || "").trim().toLowerCase();
 		if (answer !== "yes" && answer !== "y") return;
 
-		const fs = require("fs");
-		const path = require("path");
 		const CACHE_DIR = path.resolve(process.cwd(), "cache");
 		const RESTART_FILE = path.join(CACHE_DIR, "restart.txt");
-
 		if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
+
 		const data = { time: Date.now(), threads: [event.threadID], sender: event.senderID };
 		fs.writeFileSync(RESTART_FILE, JSON.stringify(data), "utf8");
 
-		await message.reply("🔄 Restarting…");
+		await message.reply("🔄 Restarting bot now…");
 		setTimeout(() => process.exit(2), 2000);
 	}
 };
 
 function compareVersion(v1, v2) {
-	const a = v1.split(".").map(Number);
-	const b = v2.split(".").map(Number);
-	for (let i = 0; i < 3; i++) {
+	const a = String(v1).split(".").map(Number);
+	const b = String(v2).split(".").map(Number);
+	for (let i = 0; i < Math.max(a.length, b.length); i++) {
 		if ((a[i] || 0) > (b[i] || 0)) return 1;
 		if ((a[i] || 0) < (b[i] || 0)) return -1;
 	}
